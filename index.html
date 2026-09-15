@@ -28,7 +28,7 @@
               blue: '#0054A6',
               darkblue: '#003D7A',
               navy: '#002855',
-              red: '#E30613',
+              orange: '#F28C28',
               darkred: '#B8040F',
               bg: '#F4F6F9',
               card: '#FFFFFF',
@@ -88,9 +88,9 @@
 
     /* Sublinhado pontilhado de erro de digitação */
     .char-error {
-      color: #E30613;
+      color: #F28C28;
       background-color: rgba(227, 6, 19, 0.15);
-      text-decoration: underline wavy #E30613;
+      text-decoration: underline wavy #F28C28;
     }
     .char-correct {
       color: #10B981;
@@ -192,6 +192,48 @@
       .race-layout { grid-template-columns: 1fr; }
       .race-side-route { position: static; }
     }
+    #tab4 {
+      gap: 2rem !important;
+      padding-bottom: 2rem;
+    }
+    #tab4 > .senai-card {
+      padding: 2rem;
+    }
+    #tab4 > .grid {
+      gap: 1.5rem;
+    }
+    #liveCompetitionParticipants > div {
+      min-height: 108px;
+      padding: 1rem;
+      background: #f8fafc;
+      border: 1px solid #dbe3ec;
+    }
+    #liveCompetitionLeaderboard tr {
+      height: 58px;
+    }
+    #liveCompetitionLeaderboard tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    #liveCompetitionLeaderboard tr:first-child {
+      background: #fff7ed;
+    }
+    #liveCompetitionLeaderboard td:first-child {
+      color: #c56a12;
+      font-size: 1rem;
+    }
+    .ranking-podium {
+      display: inline-flex;
+      min-width: 34px;
+      justify-content: center;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid #f3c58d;
+      background: #fff7ed;
+      color: #a9530a;
+      font-weight: 800;
+    }
+    .text-\[\#E30613\] {
+      color: #F28C28 !important;
+    }
 
     .senai-mark {
       position: relative;
@@ -269,7 +311,7 @@
 <body class="min-h-screen flex flex-col antialiased">
 
   <!-- CABEÇALHO SUPERIOR FIXO INSTITUCIONAL SENAI -->
-  <header class="sticky top-0 z-50 bg-[#0054A6] text-white shadow-md border-b-4 border-[#E30613]">
+  <header class="sticky top-0 z-50 bg-[#0054A6] text-white shadow-md border-b-4 border-[#F28C28]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-20">
         
@@ -335,7 +377,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2">
-              <span class="bg-[#0054A6] text-white text-xs px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
+               <svg class="w-5 h-5 text-[#F28C28] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 101.414 1.414L8.586 10l1.293 1.293a1 1 0 101.414 1.414L11.414 10l-1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
                 Módulo Investigativo
               </span>
               <span class="text-xs text-slate-500 font-semibold uppercase">
@@ -350,7 +392,7 @@
             </p>
           </div>
           <div class="flex items-center gap-3">
-            <button onclick="openTablesInspectionModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded border border-slate-300 transition flex items-center gap-2">
+              <svg class="w-5 h-5 text-[#F28C28] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
               <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
               Inspecionar Tabelas Brutas
             </button>
@@ -466,7 +508,7 @@
         <!-- Barra de Título do Terminal -->
         <div class="bg-[#1E293B] px-4 py-2.5 flex items-center justify-between border-b border-slate-700">
           <div class="flex items-center space-x-2">
-            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-orange-400"></div>
             <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
             <div class="w-3 h-3 rounded-full bg-green-500"></div>
             <span class="text-xs font-mono text-slate-300 ml-2 font-semibold">TERMINAL DQL INTERATIVO // MYSQL COMPLIANT</span>
@@ -607,7 +649,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 border-slate-200 gap-3">
           <div>
             <div class="flex items-center gap-2">
-              <span class="bg-[#E30613] text-white text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+              <span class="bg-[#F28C28] text-white text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                 Módulo Prático de Agilidade
               </span>
               <span class="text-xs text-slate-500 font-semibold uppercase">
@@ -644,7 +686,7 @@
             <div id="cpmDisplay" class="text-3xl font-black font-mono text-[#38BDF8] mt-1">0</div>
             <div class="text-[10px] text-slate-400 mt-0.5">Caracteres Por Minuto</div>
           </div>
-          <div class="bg-slate-900 text-white p-4 rounded-lg border-l-4 border-l-[#E30613] shadow-inner">
+          <div class="bg-slate-900 text-white p-4 rounded-lg border-l-4 border-l-[#F28C28] shadow-inner">
             <div class="text-xs font-mono text-slate-400 uppercase tracking-wider">Precisão Global</div>
             <div id="accDisplay" class="text-3xl font-black font-mono text-white mt-1">100%</div>
             <div class="text-[10px] text-slate-400 mt-0.5">Taxa de Acerto de Teclas</div>
@@ -786,10 +828,10 @@
     <!-- SUBPAGINA: ACOMPANHAMENTO MULTIPLAYER DA COMPETICAO                     -->
     <!-- ========================================================================= -->
     <section id="tab4" class="hidden space-y-6">
-      <div class="senai-card rounded-lg p-6 border-l-4 border-l-[#E30613]">
+      <div class="senai-card rounded-lg p-6 border-l-4 border-l-[#F28C28]">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <span class="text-xs font-bold uppercase tracking-widest text-[#E30613]">Painel de acompanhamento</span>
+            <span class="text-xs font-bold uppercase tracking-widest text-[#F28C28]">Painel de acompanhamento</span>
             <h2 class="text-2xl font-bold text-slate-900 mt-2">Competição ETL ao vivo</h2>
             <p class="text-sm text-slate-600 mt-1 max-w-3xl">Acompanhe quem está digitando, quem concluiu cada etapa e quem chegou primeiro ao fim dos três scripts.</p>
           </div>
@@ -800,7 +842,7 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="senai-card p-5 border-t-4 border-t-[#0054A6]"><span class="text-xs uppercase font-bold text-slate-500">Participantes online</span><strong id="liveParticipantCount" class="block text-3xl font-mono text-[#0054A6] mt-2">0</strong></div>
         <div class="senai-card p-5 border-t-4 border-t-[#10B981]"><span class="text-xs uppercase font-bold text-slate-500">Etapa em andamento</span><strong id="liveStageCount" class="block text-3xl font-mono text-[#10B981] mt-2">1 / 3</strong></div>
-        <div class="senai-card p-5 border-t-4 border-t-[#E30613]"><span class="text-xs uppercase font-bold text-slate-500">Líder atual</span><strong id="liveLeaderName" class="block text-lg text-[#E30613] mt-3 truncate">Aguardando</strong></div>
+        <div class="senai-card p-5 border-t-4 border-t-[#F28C28]"><span class="text-xs uppercase font-bold text-slate-500">Líder atual</span><strong id="liveLeaderName" class="block text-lg text-[#F28C28] mt-3 truncate">Aguardando</strong></div>
       </div>
 
       <div class="senai-card p-6">
@@ -868,10 +910,10 @@
             <span id="quizCorrectCount" class="text-2xl font-bold text-emerald-800">0</span>
             <span class="text-[10px] text-emerald-600 block mt-1">respostas corretas</span>
           </div>
-          <div class="bg-red-50 p-3.5 rounded border border-red-200">
-            <span class="text-red-700 text-[11px] uppercase font-bold tracking-wider block">Erros</span>
-            <span id="quizWrongCount" class="text-2xl font-bold text-red-800">0</span>
-            <span class="text-[10px] text-red-600 block mt-1">respostas incorretas</span>
+          <div class="bg-orange-50 p-3.5 rounded border border-orange-200">
+            <span class="text-orange-700 text-[11px] uppercase font-bold tracking-wider block">Erros</span>
+            <span id="quizWrongCount" class="text-2xl font-bold text-orange-800">0</span>
+            <span class="text-[10px] text-orange-600 block mt-1">respostas incorretas</span>
           </div>
           <div class="bg-blue-50 p-3.5 rounded border border-blue-200">
             <span class="text-blue-700 text-[11px] uppercase font-bold tracking-wider block">Aproveitamento</span>
@@ -2116,8 +2158,8 @@ ORDER BY s.codigo_sku;`,
         output.innerHTML = html;
       } catch (err) {
         output.innerHTML = `
-          <div class="p-4 bg-red-950/50 border border-red-800 text-red-300 font-mono text-xs">
-            <span class="font-bold text-[#E30613] block mb-1">ERRO DE EXECUÇÃO SQL:</span>
+          <div class="p-4 bg-orange-950/50 border border-orange-800 text-orange-300 font-mono text-xs">
+            <span class="font-bold text-[#F28C28] block mb-1">ERRO DE EXECUÇÃO SQL:</span>
             ${err.message}
           </div>
         `;
@@ -2162,7 +2204,7 @@ ORDER BY s.codigo_sku;`,
           </div>
         `;
       } else {
-        box.className = 'mx-4 mb-4 p-4 rounded text-xs font-mono font-medium border bg-red-950/80 border-[#E30613] text-red-200';
+        box.className = 'mx-4 mb-4 p-4 rounded text-xs font-mono font-medium border bg-orange-950/80 border-[#F28C28] text-orange-200';
         box.innerHTML = `
           <div class="flex items-center gap-2">
             <svg class="w-5 h-5 text-[#E30613] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
@@ -2357,9 +2399,9 @@ ORDER BY s.codigo_sku;`,
 
     function flashInputError() {
       const display = document.getElementById('typingCodeDisplay');
-      display.classList.add('border-[#E30613]');
+      display.classList.add('border-[#F28C28]');
       setTimeout(() => {
-        display.classList.remove('border-[#E30613]');
+        display.classList.remove('border-[#F28C28]');
       }, 180);
     }
 
@@ -2574,7 +2616,7 @@ ORDER BY s.codigo_sku;`,
       if (liveTbody) {
         liveTbody.innerHTML = records.map((rec, idx) => `
           <tr class="hover:bg-slate-50">
-            <td class="p-3 font-bold">${idx + 1}º</td>
+            <td class="p-3 font-bold"><span class="ranking-podium">${idx + 1}º</span></td>
             <td class="p-3 font-bold text-slate-900">${escapeHtml(rec.student || 'Aluno')}</td>
             <td class="p-3 font-mono text-slate-600">${escapeHtml(rec.scriptTitle || 'Competição')}</td>
             <td class="p-3 font-mono text-emerald-700 font-bold">${rec.wpm || 0}</td>
@@ -2899,7 +2941,7 @@ ORDER BY s.codigo_sku;`,
         const isCorrect = isAnswered && userAnswer === q.correta;
 
         return `
-          <div id="qCard_${q.id}" class="senai-card rounded-lg p-6 border-l-4 ${isAnswered ? (isCorrect ? 'border-l-[#10B981]' : 'border-l-[#E30613]') : 'border-l-[#0054A6]'} transition">
+          <div id="qCard_${q.id}" class="senai-card rounded-lg p-6 border-l-4 ${isAnswered ? (isCorrect ? 'border-l-[#10B981]' : 'border-l-[#F28C28]') : 'border-l-[#0054A6]'} transition">
             <!-- Metadados da Questão -->
             <div class="flex flex-wrap items-center justify-between gap-2 text-xs mb-3">
               <div class="flex flex-wrap items-center gap-2 font-mono">
@@ -2929,8 +2971,8 @@ ORDER BY s.codigo_sku;`,
                     optStyle = 'border-[#10B981] bg-emerald-50 text-emerald-900 font-semibold';
                     indicator = `<span class="w-6 h-6 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-xs uppercase font-mono mr-3">✓</span>`;
                   } else if (opt.letra === userAnswer) {
-                    optStyle = 'border-[#E30613] bg-red-50 text-red-900 font-semibold';
-                    indicator = `<span class="w-6 h-6 rounded-full bg-[#E30613] text-white flex items-center justify-center font-bold text-xs uppercase font-mono mr-3">✕</span>`;
+                    optStyle = 'border-[#F28C28] bg-orange-50 text-orange-900 font-semibold';
+                    indicator = `<span class="w-6 h-6 rounded-full bg-[#F28C28] text-white flex items-center justify-center font-bold text-xs uppercase font-mono mr-3">✕</span>`;
                   } else {
                     optStyle = 'border-slate-200 bg-slate-50/50 text-slate-400 opacity-60';
                   }
@@ -2956,7 +2998,7 @@ ORDER BY s.codigo_sku;`,
                 ${!isAnswered ? `
                   <span class="text-xs text-slate-400 italic font-mono">Selecione uma opção para registrar a resposta.</span>
                 ` : `
-                  <span class="text-xs font-mono font-bold ${isCorrect ? 'text-[#10B981]' : 'text-[#E30613]'} flex items-center gap-1.5">
+                  <span class="text-xs font-mono font-bold ${isCorrect ? 'text-[#10B981]' : 'text-[#F28C28]'} flex items-center gap-1.5">
                     ${isCorrect ? '✓ RESPOSTA CORRETA' : '✕ RESPOSTA INCORRETA'}
                   </span>
                 `}
