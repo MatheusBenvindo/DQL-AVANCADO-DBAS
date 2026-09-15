@@ -175,6 +175,23 @@
       word-break: break-all;
       white-space: normal;
     }
+    .race-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 1.25rem;
+      align-items: start;
+    }
+    .race-side-route {
+      position: sticky;
+      top: 150px;
+    }
+    .race-side-route .route-runner {
+      animation: none;
+    }
+    @media (max-width: 1023px) {
+      .race-layout { grid-template-columns: 1fr; }
+      .race-side-route { position: static; }
+    }
 
     .senai-mark {
       position: relative;
@@ -583,39 +600,6 @@
           </div>
         </div>
 
-        <div class="multiplayer-route rounded-lg p-4 sm:p-5 mt-5 text-white">
-          <div class="relative z-10 flex items-center justify-between gap-3 mb-5">
-            <div>
-              <span class="text-[10px] uppercase tracking-[0.18em] font-bold text-sky-300">Percurso da atividade</span>
-              <h3 class="text-sm sm:text-base font-bold text-white mt-1">Da digitação ao multiplayer</h3>
-            </div>
-            <span class="text-[10px] font-mono text-emerald-300 border border-emerald-400/40 px-2 py-1 rounded">ONLINE READY</span>
-          </div>
-          <div class="relative z-10 flex items-start justify-between gap-2 text-[10px] sm:text-xs font-mono text-slate-300">
-            <div class="route-stop">
-              <div class="route-stop-dot"></div>
-              <span class="block text-sky-300 font-bold">01</span>
-              <span class="block mt-1">DIGITAR SCRIPT</span>
-            </div>
-            <div class="route-stop">
-              <div class="route-stop-dot"></div>
-              <span class="block text-sky-300 font-bold">02</span>
-              <span class="block mt-1">VALIDAR ETL</span>
-            </div>
-            <div class="route-stop">
-              <div class="route-stop-dot border-emerald-400"></div>
-              <span class="block text-emerald-300 font-bold">03</span>
-              <span class="block mt-1">LEADERBOARD</span>
-            </div>
-            <span class="route-runner" aria-hidden="true"></span>
-          </div>
-          <div id="multiplayerLiveStatus" class="relative z-10 mt-5 pt-3 border-t border-slate-700 text-[11px] text-slate-400">
-            Modo local: configure o Firebase para ver a turma avançando em tempo real.
-          </div>
-          <div id="multiplayerParticipantsList" class="relative z-10 mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-[11px]">
-            <div class="text-slate-500 italic">Aguardando participantes...</div>
-          </div>
-        </div>
       </div>
 
       <!-- Seção da Corrida de Digitação de Código (Typing Speed Race) -->
@@ -646,6 +630,8 @@
           </div>
         </div>
 
+        <div class="race-layout">
+          <div>
         <!-- Painel de Métricas em Tempo Real (HUD) -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div class="bg-slate-900 text-white p-4 rounded-lg border-l-4 border-l-[#10B981] shadow-inner">
@@ -731,6 +717,25 @@
           </div>
         </div>
 
+          </div>
+          <aside class="race-side-route">
+            <div class="multiplayer-route rounded-lg p-4 text-white">
+              <div class="relative z-10 flex items-center justify-between gap-2 mb-4">
+                <div><span class="text-[10px] uppercase tracking-[0.18em] font-bold text-sky-300">Corrida ao vivo</span><h3 class="text-sm font-bold text-white mt-1">Percurso da turma</h3></div>
+                <span id="raceConnectionBadge" class="text-[9px] font-mono text-amber-300 border border-amber-400/40 px-1.5 py-1 rounded">OFFLINE</span>
+              </div>
+              <div class="relative z-10 space-y-3 text-[10px] font-mono text-slate-300">
+                <div class="flex items-center gap-2"><span class="route-stop-dot m-0 shrink-0"></span><span>01 · SCRIPT 1</span></div>
+                <div class="flex items-center gap-2"><span class="route-stop-dot m-0 shrink-0"></span><span>02 · SCRIPT 2</span></div>
+                <div class="flex items-center gap-2"><span class="route-stop-dot m-0 shrink-0 border-emerald-400"></span><span>03 · SCRIPT 3 / CHEGADA</span></div>
+                <span class="route-runner" aria-hidden="true"></span>
+              </div>
+              <div id="multiplayerLiveStatus" class="relative z-10 mt-4 pt-3 border-t border-slate-700 text-[11px] text-slate-400">Conectando a corrida...</div>
+              <div id="multiplayerParticipantsList" class="relative z-10 mt-2 space-y-2 text-[11px]"><div class="text-slate-500 italic">Aguardando participantes...</div></div>
+            </div>
+          </aside>
+        </div>
+
       </div>
 
       <!-- Tabela de Classificação da Turma (Leaderboard Multiplayer / Realtime) -->
@@ -742,7 +747,7 @@
                 Multiplayer // GitHub Pages
               </span>
               <span id="firebaseStatusBadge" class="text-[11px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                Modo Local (localStorage Fallback)
+                Firebase RTDB
               </span>
             </div>
             <h3 class="text-xl font-bold text-slate-900 mt-1">
@@ -750,11 +755,6 @@
             </h3>
           </div>
 
-          <div class="flex items-center gap-2">
-            <button onclick="clearLocalLeaderboard()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded font-semibold transition">
-              Limpar Recordes Locais
-            </button>
-          </div>
         </div>
 
         <!-- Tabela Renderizada Dinamicamente -->
@@ -778,9 +778,6 @@
           </table>
         </div>
 
-        <p class="text-[11px] text-slate-500 italic">
-          * Com o Firebase configurado, o percurso, os alunos ativos e o ranking são compartilhados em tempo real. Sem configuração, o modo local continua disponível neste navegador.
-        </p>
       </div>
 
     </section>
@@ -809,7 +806,7 @@
       <div class="senai-card p-6">
         <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
           <div><h3 class="text-lg font-bold text-slate-900">Percurso da turma</h3><p id="liveCompetitionStatus" class="text-xs text-slate-500 mt-1">Aguardando conexão dos participantes.</p></div>
-          <span id="liveCompetitionBadge" class="text-xs font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded">Modo local</span>
+          <span id="liveCompetitionBadge" class="text-xs font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded">Firebase</span>
         </div>
         <div id="liveCompetitionParticipants" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <p class="text-sm text-slate-500 italic">Nenhum participante conectado.</p>
@@ -928,12 +925,12 @@
   <footer class="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 py-6 mt-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-3">
-        <span class="font-bold text-white tracking-wider">SENAI // DEPARTAMENTO REGIONAL</span>
+        <span class="font-bold text-white tracking-wider">SENAI DF</span>
         <span class="text-slate-600">|</span>
-        <span>Programa de Formação em Banco de Dados Relacional &amp; Engenharia de Dados</span>
+        <span>ADMINISTRADOR DE BANCO DE DADOS</span>
       </div>
       <div class="text-center md:text-right text-slate-500">
-        Ambiente SPA Single Page • HTML5 + Tailwind CSS + Vanilla JS • Otimizado para GitHub Pages
+        Ambiente de treinamento técnico
       </div>
     </div>
   </footer>
@@ -1147,7 +1144,6 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
             }
             listenFirebaseLeaderboard();
             listenFirebaseParticipants();
-            publishPresence();
             updateLiveCompetitionBadge(true);
           };
           if (firebase.auth) {
@@ -1163,16 +1159,18 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
           console.warn('Falha ao inicializar Firebase RTDB. Ativando fallback em localStorage:', err);
         }
       }
-      // Fallback em localStorage
+      // Sem Firebase, a competição não publica resultados para evitar misturar sessões locais.
       isFirebaseReady = false;
       if (badge) {
         badge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300';
-        badge.textContent = 'Modo Local (localStorage Fallback)';
+        badge.textContent = 'Firebase indisponível';
       }
-      updateMultiplayerStatus('Modo local: configure o Firebase para compartilhar o percurso com a turma.');
+      updateMultiplayerStatus('A competição aguarda conexão com o Firebase.');
       updateLiveCompetitionBadge(false);
-      renderLocalParticipants();
-      renderLocalLeaderboard();
+    }
+
+    function getCompetitionDay() {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
     }
 
     function updateMultiplayerStatus(text) {
@@ -1193,6 +1191,7 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
         wpm: Number(document.getElementById('wpmDisplay')?.textContent || 0),
         accuracy: document.getElementById('accDisplay')?.textContent || '100%',
         status,
+        competitionDay: getCompetitionDay(),
         finishedAt: status === 'finalizado' ? firebase.database.ServerValue.TIMESTAMP : null,
         updatedAt: firebase.database.ServerValue.TIMESTAMP
       };
@@ -1210,7 +1209,9 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
     function listenFirebaseParticipants() {
       if (!isFirebaseReady || !firebaseDb) return;
       firebaseDb.ref('senai_typing_race/participants').on('value', snapshot => {
-        renderParticipants(snapshot.val() || {});
+        const today = getCompetitionDay();
+        const todayParticipants = Object.fromEntries(Object.entries(snapshot.val() || {}).filter(([, entry]) => entry.competitionDay === today));
+        renderParticipants(todayParticipants);
       });
     }
 
@@ -1230,6 +1231,7 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
         list.innerHTML = '<div class="text-slate-500 italic">Aguardando participantes...</div>';
         if (liveList) liveList.innerHTML = '<p class="text-sm text-slate-500 italic">Nenhum participante conectado.</p>';
         updateMultiplayerStatus('Nenhum aluno conectado ao percurso no momento.');
+        updateRaceRunner(0);
         updateLiveCompetitionSummary(entries, null);
         return;
       }
@@ -1249,13 +1251,21 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
       }).join('');
       list.innerHTML = participantMarkup;
       if (liveList) liveList.innerHTML = participantMarkup;
+      updateRaceRunner(entries[0].progress || 0);
       updateLiveCompetitionSummary(entries, winner);
+    }
+
+    function updateRaceRunner(progress) {
+      const runner = document.querySelector('.race-side-route .route-runner');
+      if (!runner) return;
+      const boundedProgress = Math.min(100, Math.max(0, Number(progress) || 0));
+      runner.style.left = `${8 + (boundedProgress * 0.84)}%`;
     }
 
     function updateLiveCompetitionBadge(connected) {
       const badge = document.getElementById('liveCompetitionBadge');
       if (!badge) return;
-      badge.textContent = connected ? 'Firebase conectado' : 'Modo local';
+      badge.textContent = connected ? 'Firebase conectado' : 'Sem conexão';
       badge.className = connected
         ? 'text-xs font-bold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded'
         : 'text-xs font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded';
@@ -1270,18 +1280,6 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
       if (stage) stage.textContent = winner ? '3 / 3' : `${entries[0]?.stage || 1} / 3`;
       if (leader) leader.textContent = winner ? winner.student : entries[0]?.student || 'Aguardando';
       if (status) status.textContent = winner ? `${winner.student} chegou primeiro à linha final.` : entries.length ? `${entries.length} participante(s) em andamento. Acompanhe as etapas em tempo real.` : 'Aguardando conexão dos participantes.';
-    }
-
-    function renderLocalParticipants() {
-      renderParticipants({
-        local: {
-          student: STATE.studentName || 'Aluno anônimo',
-          scriptTitle: `Script ${STATE.typing.scriptIndex + 1} de 3`,
-          stage: Math.min(3, STATE.typing.completedScripts + 1),
-          progress: Math.round(((STATE.typing.completedScripts >= TYPING_SCRIPTS.length ? TYPING_SCRIPTS.reduce((total, item) => total + item.code.length, 0) : TYPING_SCRIPTS.slice(0, STATE.typing.completedScripts).reduce((total, item) => total + item.code.length, 0) + STATE.typing.currentIndex) / TYPING_SCRIPTS.reduce((total, item) => total + item.code.length, 0)) * 100),
-          status: STATE.typing.isCompleted ? 'finalizado' : STATE.typing.isActive ? 'digitando' : 'aguardando'
-        }
-      });
     }
 
     /* ==========================================================================
@@ -1330,7 +1328,6 @@ LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
         localStorage.setItem('senai_student_name', val);
         updateStudentLabel();
         publishPresence();
-        if (!isFirebaseReady) renderLocalParticipants();
         closeStudentModal();
       }
     }
@@ -2351,7 +2348,6 @@ ORDER BY s.codigo_sku;`,
       updateTypingMetrics();
       renderTypingDisplay();
       publishPresence();
-      if (!isFirebaseReady) renderLocalParticipants();
 
       // Checa se completou o script
       if (STATE.typing.currentIndex >= targetText.length) {
@@ -2374,7 +2370,6 @@ ORDER BY s.codigo_sku;`,
       document.getElementById('typingStatus').textContent = 'STATUS: EM ANDAMENTO';
       document.getElementById('typingStatus').className = 'font-bold text-[#10B981]';
       publishPresence('digitando');
-      if (!isFirebaseReady) renderLocalParticipants();
 
       STATE.typing.timerInterval = setInterval(() => {
         updateTypingMetrics();
@@ -2435,7 +2430,6 @@ ORDER BY s.codigo_sku;`,
         document.getElementById('typingStatus').className = 'font-bold text-[#10B981]';
         renderTypingDisplay();
         publishPresence('digitando');
-        if (!isFirebaseReady) renderLocalParticipants();
         setTimeout(focusTypingInput, 80);
         STATE.typing.timerInterval = setInterval(updateTypingMetrics, 100);
         return;
@@ -2450,7 +2444,6 @@ ORDER BY s.codigo_sku;`,
       document.getElementById('typingStatus').textContent = 'STATUS: FINALIZADO';
       document.getElementById('typingStatus').className = 'font-bold text-sky-400';
       publishPresence('finalizado');
-      if (!isFirebaseReady) renderLocalParticipants();
 
       // Exibe Banner de Conclusão
       const banner = document.getElementById('raceCompletedBanner');
@@ -2495,7 +2488,6 @@ ORDER BY s.codigo_sku;`,
       document.getElementById('scriptSelector').value = '0';
       document.getElementById('scriptTitleDisplay').textContent = TYPING_SCRIPTS[0].title;
       publishPresence('aguardando');
-      if (!isFirebaseReady) renderLocalParticipants();
 
       renderTypingDisplay();
       focusTypingInput();
@@ -2514,42 +2506,13 @@ ORDER BY s.codigo_sku;`,
       document.getElementById('leaderboardSection').scrollIntoView({ behavior: 'smooth' });
     }
 
-    /* ==========================================================================
-       7. LEADERBOARD MULTIPLAYER (FIREBASE REALTIME & FALLBACK LOCALSTORAGE)
+    /* ========================================================================
+       7. LEADERBOARD MULTIPLAYER (FIREBASE REALTIME)
        ========================================================================== */
-    const DEFAULT_LEADERBOARD = [
-      { student: "Lucas Mendes (SENAI-INFRA)", scriptTitle: "Script 1", wpm: 68, cpm: 340, accuracy: "98%", timeSec: "24.2", timestamp: new Date(Date.now() - 3600000).toISOString() },
-      { student: "Beatriz Santos (SENAI-DEV)", scriptTitle: "Script 1", wpm: 61, cpm: 305, accuracy: "97%", timeSec: "27.0", timestamp: new Date(Date.now() - 7200000).toISOString() },
-      { student: "Carlos Eduardo (SENAI-DBA)", scriptTitle: "Script 1", wpm: 54, cpm: 270, accuracy: "95%", timeSec: "30.5", timestamp: new Date(Date.now() - 10800000).toISOString() }
-    ];
-
-    function getLocalLeaderboard() {
-      const data = localStorage.getItem('senai_leaderboard_data');
-      if (data) {
-        try { return JSON.parse(data); } catch (e) { }
-      }
-      return DEFAULT_LEADERBOARD;
-    }
-
-    function saveLocalLeaderboard(list) {
-      localStorage.setItem('senai_leaderboard_data', JSON.stringify(list));
-    }
-
     function submitLeaderboardScore(scoreObj) {
-      if (isFirebaseReady && firebaseDb) {
-        try {
-          firebaseDb.ref('senai_typing_race/leaderboard').push(scoreObj);
-          return;
-        } catch (err) {
-          console.warn('Erro ao salvar no Firebase. Gravando localmente:', err);
-        }
-      }
-      // Fallback local
-      const list = getLocalLeaderboard();
-      list.push(scoreObj);
-      list.sort((a, b) => b.wpm - a.wpm);
-      saveLocalLeaderboard(list.slice(0, 25)); // guarda top 25
-      renderLocalLeaderboard();
+      if (!isFirebaseReady || !firebaseDb) return;
+      firebaseDb.ref('senai_typing_race/leaderboard').push({ ...scoreObj, competitionDay: getCompetitionDay() })
+        .catch(error => console.warn('Erro ao registrar resultado no Firebase:', error));
     }
 
     function listenFirebaseLeaderboard() {
@@ -2558,7 +2521,8 @@ ORDER BY s.codigo_sku;`,
         firebaseDb.ref('senai_typing_race/leaderboard').orderByChild('wpm').limitToLast(25).on('value', snapshot => {
           const val = snapshot.val();
           if (val) {
-            const list = Object.values(val);
+            const today = getCompetitionDay();
+            const list = Object.values(val).filter(record => record.competitionDay === today);
             list.sort((a, b) => b.wpm - a.wpm);
             renderLeaderboardTable(list);
           } else {
@@ -2567,13 +2531,7 @@ ORDER BY s.codigo_sku;`,
         });
       } catch (e) {
         console.error('Falha no listener do Firebase:', e);
-        renderLocalLeaderboard();
       }
-    }
-
-    function renderLocalLeaderboard() {
-      const list = getLocalLeaderboard();
-      renderLeaderboardTable(list);
     }
 
     function renderLeaderboardTable(records) {
@@ -2627,12 +2585,6 @@ ORDER BY s.codigo_sku;`,
       }
     }
 
-    function clearLocalLeaderboard() {
-      if (confirm("Deseja realmente limpar os recordes armazenados no navegador local?")) {
-        localStorage.removeItem('senai_leaderboard_data');
-        renderLocalLeaderboard();
-      }
-    }
 
     function openEtlDocsModal() {
       document.getElementById('etlDocsModal').classList.remove('hidden');
