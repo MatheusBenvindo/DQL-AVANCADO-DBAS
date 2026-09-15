@@ -1,0 +1,3112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SENAI | Ambiente Interativo de DQL Avançado & ETL</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Database SDK (Compat CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Tailwind Configuration com Paleta Oficial SENAI -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            senai: {
+              blue: '#0054A6',
+              darkblue: '#003D7A',
+              navy: '#002855',
+              red: '#E30613',
+              darkred: '#B8040F',
+              bg: '#F4F6F9',
+              card: '#FFFFFF',
+              border: '#E2E8F0',
+              terminal: '#0F172A',
+              terminalHeader: '#1E293B',
+              accentGreen: '#10B981',
+              accentSky: '#38BDF8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"Fira Code"', 'JetBrains Mono', 'Consolas', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Estilos Customizados e Ajustes de Terminal */
+    body {
+      background-color: #F4F6F9;
+      color: #1E293B;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .font-mono-code {
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* Scrollbars refinadas para terminais */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0F172A;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Cursor de Digitação */
+    @keyframes blinkCursor {
+      0%, 100% { border-color: #38BDF8; }
+      50% { border-color: transparent; }
+    }
+    .typing-cursor {
+      border-left: 2.5px solid #38BDF8;
+      animation: blinkCursor 0.9s infinite;
+    }
+
+    /* Sublinhado pontilhado de erro de digitação */
+    .char-error {
+      color: #E30613;
+      background-color: rgba(227, 6, 19, 0.15);
+      text-decoration: underline wavy #E30613;
+    }
+    .char-correct {
+      color: #10B981;
+    }
+    .char-pending {
+      color: #64748B;
+    }
+
+    /* Sombras e Bordas Estilo SENAI */
+    .senai-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    }
+
+    /* Percurso visual da corrida ate o ranking multiplayer */
+    .multiplayer-route {
+      position: relative;
+      overflow: hidden;
+      background: #0F172A;
+      border: 1px solid #1E293B;
+    }
+    .multiplayer-route::before {
+      content: '';
+      position: absolute;
+      left: 9%;
+      right: 9%;
+      top: 50%;
+      height: 3px;
+      background: #334155;
+      transform: translateY(-50%);
+    }
+    .route-runner {
+      position: absolute;
+      z-index: 2;
+      left: 8%;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #38BDF8;
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16), 0 0 18px rgba(56, 189, 248, 0.8);
+      transform: translate(-50%, -50%);
+      animation: routeProgress 7s ease-in-out infinite;
+    }
+    .route-runner::after {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 14px;
+      width: 4px;
+      height: 18px;
+      border-radius: 4px;
+      background: #10B981;
+      box-shadow: -7px 7px 0 -1px #10B981, 7px 7px 0 -1px #10B981;
+    }
+    .route-stop {
+      position: relative;
+      z-index: 3;
+      width: 30%;
+      min-width: 76px;
+      text-align: center;
+    }
+    .route-stop-dot {
+      width: 14px;
+      height: 14px;
+      margin: 0 auto 8px;
+      border: 3px solid #38BDF8;
+      border-radius: 50%;
+      background: #0F172A;
+    }
+    @keyframes routeProgress {
+      0%, 12% { left: 8%; }
+      42%, 58% { left: 50%; }
+      88%, 100% { left: 92%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .route-runner { animation: none; left: 50%; }
+    }
+    .typing-code-display {
+      overflow-wrap: anywhere;
+      word-break: break-all;
+      white-space: normal;
+    }
+
+    .senai-mark {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 112px;
+      height: 48px;
+      overflow: hidden;
+      background: #ffffff;
+      color: #0054A6;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -0.08em;
+      line-height: 1;
+    }
+    .senai-mark::after {
+      content: 'EDUCACAO PROFISSIONAL';
+      position: absolute;
+      right: 5px;
+      bottom: 4px;
+      color: #003D7A;
+      font-size: 0.31rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    /* Direcao visual institucional: mais editorial, menos painel generico */
+    body {
+      background: #eef2f6;
+    }
+    main {
+      max-width: 1180px !important;
+    }
+    main .senai-card {
+      border-radius: 2px !important;
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08) !important;
+    }
+    header {
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.14) !important;
+    }
+    header nav button {
+      border-radius: 0 !important;
+      letter-spacing: 0.02em;
+    }
+    main h2,
+    main h3 {
+      letter-spacing: -0.02em;
+    }
+    .route-stop-dot,
+    .route-runner {
+      border-radius: 2px;
+    }
+    @media (max-width: 640px) {
+      header .max-w-7xl > div:first-child {
+        min-height: 74px;
+        height: auto;
+        padding: 12px 0;
+      }
+      header h1 {
+        font-size: 0.84rem !important;
+        line-height: 1.25;
+      }
+      header p {
+        line-height: 1.25;
+      }
+      header nav button {
+        white-space: normal;
+        min-width: 190px;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- CABEÇALHO SUPERIOR FIXO INSTITUCIONAL SENAI -->
+  <header class="sticky top-0 z-50 bg-[#0054A6] text-white shadow-md border-b-4 border-[#E30613]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Identidade Visual SENAI -->
+        <div class="flex items-center space-x-4">
+          <div class="senai-mark" role="img" aria-label="SENAI">SENAI</div>
+          <div>
+            <h1 class="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              LABORATÓRIO DE DQL AVANÇADO &amp; PIPELINES ETL
+            </h1>
+            <p class="text-xs text-blue-100 uppercase tracking-wider font-semibold">
+              Treinamento Técnico Especializado | ANSI SQL &amp; MySQL Workbench
+            </p>
+          </div>
+        </div>
+
+        <!-- Indicador de Status Acadêmico / Identificação -->
+        <div class="hidden md:flex items-center space-x-3 text-xs bg-[#003D7A] px-3 py-2 rounded border border-blue-400/30">
+          <div class="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-pulse"></div>
+          <div>
+            <span class="text-blue-200">Operador:</span>
+            <span id="navStudentLabel" class="font-bold text-white ml-1">Não Identificado</span>
+          </div>
+          <button onclick="openStudentModal()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-2 py-0.5 rounded transition">
+            Alterar
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Barra de Abas de Navegação -->
+      <nav class="flex space-x-1 border-t border-blue-400/30 pt-1 pb-1 overflow-x-auto text-sm font-medium">
+        <button id="tabBtn1" onclick="switchTab('tab1')" class="px-4 py-2.5 rounded-t font-semibold transition border-b-2 flex items-center gap-2 text-white border-white bg-[#003D7A]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+          BLOCO 1: DATABASE DETECTIVE
+        </button>
+        <button id="tabBtn2" onclick="switchTab('tab2')" class="px-4 py-2.5 rounded-t font-semibold transition border-b-2 flex items-center gap-2 text-blue-100 border-transparent hover:text-white hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          BLOCO 2: CASO ETL &amp; CORRIDA DE DIGITAÇÃO
+        </button>
+        <button id="tabBtn3" onclick="switchTab('tab3')" class="px-4 py-2.5 rounded-t font-semibold transition border-b-2 flex items-center gap-2 text-blue-100 border-transparent hover:text-white hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          BLOCO 3: BANCO DE QUESTÕES DE CONCURSOS (15 QUESTÕES)
+        </button>
+        <button id="tabBtn4" onclick="switchTab('tab4')" class="px-4 py-2.5 rounded-t font-semibold transition border-b-2 flex items-center gap-2 text-blue-100 border-transparent hover:text-white hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8-8 8M3 17l4-4 3 3 5-6"></path></svg>
+          ACOMPANHAMENTO AO VIVO
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- BLOCO 1: DATABASE DETECTIVE (MINOR CRIMES DIVISION)                       -->
+    <!-- ========================================================================= -->
+    <section id="tab1" class="space-y-6">
+      
+      <!-- Cabeçalho do Bloco -->
+      <div class="senai-card rounded-lg p-6 border-l-4 border-l-[#0054A6]">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="bg-[#0054A6] text-white text-xs px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                Módulo Investigativo
+              </span>
+              <span class="text-xs text-slate-500 font-semibold uppercase">
+                Simulação Forense de Banco de Dados Relacional
+              </span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mt-2">
+              Database Detective: Divisão de Auditoria e Inconsistências
+            </h2>
+            <p class="text-sm text-slate-600 mt-1 max-w-3xl">
+              Ambiente de validação prática para comandos DQL avançados (<code class="text-blue-700 font-mono font-bold">INNER JOIN</code>, <code class="text-blue-700 font-mono font-bold">LEFT JOIN</code>, <code class="text-blue-700 font-mono font-bold">RIGHT JOIN</code> e expressões <code class="text-blue-700 font-mono font-bold">CASE WHEN</code>). Selecione um dos dossiês forenses, examine o esquema relacional, estruture sua consulta SQL e submeta a evidência para validação automatizada.
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="openTablesInspectionModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded border border-slate-300 transition flex items-center gap-2">
+              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+              Inspecionar Tabelas Brutas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seletor de Casos (Dossiês Progressivos) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- Caso 101 -->
+        <div id="caseCard101" onclick="selectCase(101)" class="senai-card rounded-lg p-5 cursor-pointer border-2 transition hover:shadow-md border-[#0054A6] bg-blue-50/20">
+          <div class="flex items-center justify-between text-xs font-bold mb-2">
+            <span class="text-[#0054A6]">DOSSIÊ 101</span>
+            <span id="caseBadge101" class="px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800 border border-amber-300">Pendente</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-base">Divergência na Folha de Pagamento</h3>
+          <p class="text-xs text-slate-600 mt-1">
+            Auditoria de salários contratuais e proventos pagos. Identificação de bônus irregulares com <code class="font-mono text-blue-700">INNER JOIN</code> e <code class="font-mono text-blue-700">CASE WHEN</code>.
+          </p>
+          <div class="mt-3 pt-3 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between">
+            <span>Tabelas: 3</span>
+            <span>Complexidade: Intermediária</span>
+          </div>
+        </div>
+
+        <!-- Caso 102 -->
+        <div id="caseCard102" onclick="selectCase(102)" class="senai-card rounded-lg p-5 cursor-pointer border-2 transition hover:shadow-md border-transparent hover:border-slate-300">
+          <div class="flex items-center justify-between text-xs font-bold mb-2">
+            <span class="text-[#0054A6]">DOSSIÊ 102</span>
+            <span id="caseBadge102" class="px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800 border border-amber-300">Pendente</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-base">Auditoria de Log de Acessos</h3>
+          <p class="text-xs text-slate-600 mt-1">
+            Rastreamento de acessos de contas inativas ou IPs externos utilizando <code class="font-mono text-blue-700">LEFT JOIN</code> com filtro <code class="font-mono text-blue-700">IS NULL</code> e classificação de risco.
+          </p>
+          <div class="mt-3 pt-3 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between">
+            <span>Tabelas: 2</span>
+            <span>Complexidade: Avançada</span>
+          </div>
+        </div>
+
+        <!-- Caso 103 -->
+        <div id="caseCard103" onclick="selectCase(103)" class="senai-card rounded-lg p-5 cursor-pointer border-2 transition hover:shadow-md border-transparent hover:border-slate-300">
+          <div class="flex items-center justify-between text-xs font-bold mb-2">
+            <span class="text-[#0054A6]">DOSSIÊ 103</span>
+            <span id="caseBadge103" class="px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800 border border-amber-300">Pendente</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-base">Inconsistência de Estoque ETL</h3>
+          <p class="text-xs text-slate-600 mt-1">
+            Sincronização de catálogo Staging vs Data Warehouse. Identificação de produtos órfãos e metadados nulos via junções e <code class="font-mono text-blue-700">CASE WHEN</code>.
+          </p>
+          <div class="mt-3 pt-3 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between">
+            <span>Tabelas: 3</span>
+            <span>Complexidade: Avançada</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Detalhes do Caso Ativo & Esquema ER -->
+      <div class="senai-card rounded-lg p-6 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 border-slate-200 gap-2">
+          <div>
+            <span id="caseDossierCode" class="text-xs font-bold text-[#0054A6] uppercase tracking-wider">DOSSIÊ 101 // AUDITORIA INTERNA</span>
+            <h3 id="caseTitle" class="text-xl font-bold text-slate-900">Divergência na Folha de Pagamento Corporativa</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="loadSuggestedQuery()" class="text-xs bg-blue-50 text-[#0054A6] hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded font-semibold transition">
+              Carregar Consulta Modelo
+            </button>
+            <button onclick="clearEditor()" class="text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 px-3 py-1.5 rounded font-semibold transition">
+              Limpar Editor
+            </button>
+          </div>
+        </div>
+
+        <!-- Descrição do Cenário e Objetivo -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-3">
+            <div>
+              <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cenário Forense:</h4>
+              <p id="caseScenario" class="text-sm text-slate-700 mt-1 leading-relaxed">
+                A controladoria financeira detectou que determinados colaboradores receberam valores acima de suas faixas salariais contratuais no último fechamento contábil. É necessário cruzar os registros de pagamentos com os dados cadastrais dos colaboradores e seus respectivos departamentos para auditar as divergências e categorizar o nível de inconformidade.
+              </p>
+            </div>
+            <div class="bg-blue-50/70 p-3.5 rounded border border-blue-200 text-sm">
+              <h4 class="text-xs font-bold text-[#0054A6] uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Objetivo Técnico da Consulta SQL:
+              </h4>
+              <p id="caseObjective" class="text-slate-800 text-xs mt-1 font-medium leading-normal">
+                Escreva uma instrução SQL unindo as tabelas de funcionários, departamentos e pagamentos. Filtre apenas os registros onde o valor pago é superior ao salário contratual (<code class="font-mono font-bold">p.valor_pago > f.salario_base</code>). Classifique o desvio como <code class="font-mono text-blue-800">'DESVIO CRITICO'</code> caso a diferença seja superior a 2000, ou <code class="font-mono text-blue-800">'DESVIO MODERADO'</code> caso contrário.
+              </p>
+            </div>
+          </div>
+
+          <!-- Esquema ER Resumido do Caso -->
+          <div class="bg-slate-50 p-4 rounded border border-slate-200">
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Esquema Relacional</span>
+              <span class="text-[10px] text-slate-500">ANSI SQL</span>
+            </h4>
+            <div id="caseSchemaContainer" class="space-y-2 text-xs font-mono">
+              <!-- Renderizado Dinamicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal SQL Simulado & Interpretador JavaScript -->
+      <div class="bg-[#0F172A] rounded-lg shadow-xl overflow-hidden border border-slate-700">
+        <!-- Barra de Título do Terminal -->
+        <div class="bg-[#1E293B] px-4 py-2.5 flex items-center justify-between border-b border-slate-700">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <span class="text-xs font-mono text-slate-300 ml-2 font-semibold">TERMINAL DQL INTERATIVO // MYSQL COMPLIANT</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+            <span>DIALETO: ANSI SQL / MYSQL</span>
+            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-[10px]">READ ONLY ENGINE</span>
+          </div>
+        </div>
+
+        <!-- Editor de Código -->
+        <div class="p-4">
+          <label for="sqlEditor" class="sr-only">Editor SQL</label>
+          <div class="relative">
+            <textarea 
+              id="sqlEditor" 
+              rows="7" 
+              spellcheck="false"
+              class="w-full bg-[#090D16] text-[#F8FAFC] font-mono-code text-sm p-4 rounded border border-slate-700 focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8] outline-none leading-relaxed resize-y"
+              placeholder="Digite sua consulta SQL aqui (SELECT ... FROM ... JOIN ... WHERE ...)"
+            ></textarea>
+          </div>
+
+          <!-- Barra de Ações do Terminal -->
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="text-slate-400 font-mono">Modelos rápidos:</span>
+              <button onclick="insertSqlSnippet('INNER JOIN')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono rounded transition">INNER JOIN</button>
+              <button onclick="insertSqlSnippet('LEFT JOIN')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono rounded transition">LEFT JOIN</button>
+              <button onclick="insertSqlSnippet('CASE WHEN')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono rounded transition">CASE WHEN</button>
+              <button onclick="insertSqlSnippet('WHERE IS NULL')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono rounded transition">IS NULL</button>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button 
+                onclick="executeStudentQuery()" 
+                class="px-4 py-2 bg-[#0054A6] hover:bg-[#003D7A] text-white text-xs font-bold rounded flex items-center gap-2 transition shadow"
+              >
+                <svg class="w-4 h-4 text-sky-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                EXECUTAR CONSULTA
+              </button>
+              <button 
+                onclick="validateCaseEvidence()" 
+                class="px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-white text-xs font-bold rounded flex items-center gap-2 transition shadow"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                VALIDAR EVIDÊNCIA
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner de Mensagens / Validação Forense -->
+        <div id="validationAlertBox" class="hidden mx-4 mb-4 p-4 rounded text-xs font-medium border">
+          <!-- Conteúdo gerado dinamicamente -->
+        </div>
+
+        <!-- Tabela de Saída de Dados Executados -->
+        <div class="bg-[#090D16] border-t border-slate-800 p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              Conjunto de Resultados Retornados (Query Result Set)
+            </span>
+            <div id="queryMetrics" class="text-xs font-mono text-slate-400">
+              Aguardando execução...
+            </div>
+          </div>
+
+          <div id="queryOutputContainer" class="overflow-x-auto max-h-72 border border-slate-800 rounded bg-[#0F172A]">
+            <p class="text-xs text-slate-500 font-mono p-6 text-center">
+              Nenhuma instrução executada no momento. Redija sua consulta SQL e clique em "Executar Consulta".
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- BLOCO 2: CASO ETL & CORRIDA DE DIGITAÇÃO DE CÓDIGO (SPEED RACE)           -->
+    <!-- ========================================================================= -->
+    <section id="tab2" class="hidden space-y-6">
+
+      <!-- Apresentação Teórica e Arquitetura ETL -->
+      <div class="senai-card rounded-lg p-6 border-l-4 border-l-[#0054A6]">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="bg-[#0054A6] text-white text-xs px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                Pipeline de Engenharia de Dados
+              </span>
+              <span class="text-xs text-slate-500 font-semibold uppercase">
+                Arquitetura Staging Area para Data Warehouse (MySQL Workbench)
+              </span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mt-2">
+              Pipeline de Extração, Transformação e Carga (ETL)
+            </h2>
+            <p class="text-sm text-slate-600 mt-1 max-w-3xl">
+              Em ambientes de análise de dados analíticos (OLAP / DW), a carga massiva de tabelas staging brutas para tabelas dimensionais e de fatos é frequentemente executada através de consultas atômicas com <code class="font-mono text-blue-700 font-bold">INSERT INTO ... SELECT</code>, aplicando sanitização de valores nulos, junções (<code class="font-mono text-blue-700">LEFT/RIGHT/INNER JOIN</code>) e normalização categórica com <code class="font-mono text-blue-700 font-bold">CASE WHEN</code>.
+            </p>
+          </div>
+          <button onclick="openEtlDocsModal()" class="px-4 py-2 bg-blue-50 text-[#0054A6] hover:bg-blue-100 border border-blue-200 text-xs font-bold rounded transition whitespace-nowrap">
+            Ver Fluxo Arquitetural ETL
+          </button>
+        </div>
+
+        <!-- Grade com os 5 Conceitos Obrigatórios Exercitados -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-5 pt-5 border-t border-slate-200">
+          <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+            <span class="font-bold text-[#0054A6] block font-mono">INNER JOIN</span>
+            <p class="text-slate-600 text-[11px] mt-1">Garante integridade referencial mantendo apenas pares válidos entre Staging e Dimensões.</p>
+          </div>
+          <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+            <span class="font-bold text-[#0054A6] block font-mono">LEFT JOIN</span>
+            <p class="text-slate-600 text-[11px] mt-1">Preserva a integridade da tabela de origem, permitindo capturar entidades sem transações associadas.</p>
+          </div>
+          <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+            <span class="font-bold text-[#0054A6] block font-mono">RIGHT JOIN</span>
+            <p class="text-slate-600 text-[11px] mt-1">Assegura a inclusão integral da tabela destino/mestre, identificando registros órfãos à esquerda.</p>
+          </div>
+          <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+            <span class="font-bold text-[#0054A6] block font-mono">CASE WHEN</span>
+            <p class="text-slate-600 text-[11px] mt-1">Aplica regras de negócio, categorizações dinâmicas e substituição condicional de nulos durante a projeção.</p>
+          </div>
+          <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+            <span class="font-bold text-[#0054A6] block font-mono">INSERT INTO ... SELECT</span>
+            <p class="text-slate-600 text-[11px] mt-1">Executa a migração e carga de alta velocidade direto no MySQL sem sobrecarga de cursores linha a linha.</p>
+          </div>
+        </div>
+
+        <div class="multiplayer-route rounded-lg p-4 sm:p-5 mt-5 text-white">
+          <div class="relative z-10 flex items-center justify-between gap-3 mb-5">
+            <div>
+              <span class="text-[10px] uppercase tracking-[0.18em] font-bold text-sky-300">Percurso da atividade</span>
+              <h3 class="text-sm sm:text-base font-bold text-white mt-1">Da digitação ao multiplayer</h3>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-300 border border-emerald-400/40 px-2 py-1 rounded">ONLINE READY</span>
+          </div>
+          <div class="relative z-10 flex items-start justify-between gap-2 text-[10px] sm:text-xs font-mono text-slate-300">
+            <div class="route-stop">
+              <div class="route-stop-dot"></div>
+              <span class="block text-sky-300 font-bold">01</span>
+              <span class="block mt-1">DIGITAR SCRIPT</span>
+            </div>
+            <div class="route-stop">
+              <div class="route-stop-dot"></div>
+              <span class="block text-sky-300 font-bold">02</span>
+              <span class="block mt-1">VALIDAR ETL</span>
+            </div>
+            <div class="route-stop">
+              <div class="route-stop-dot border-emerald-400"></div>
+              <span class="block text-emerald-300 font-bold">03</span>
+              <span class="block mt-1">LEADERBOARD</span>
+            </div>
+            <span class="route-runner" aria-hidden="true"></span>
+          </div>
+          <div id="multiplayerLiveStatus" class="relative z-10 mt-5 pt-3 border-t border-slate-700 text-[11px] text-slate-400">
+            Modo local: configure o Firebase para ver a turma avançando em tempo real.
+          </div>
+          <div id="multiplayerParticipantsList" class="relative z-10 mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-[11px]">
+            <div class="text-slate-500 italic">Aguardando participantes...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção da Corrida de Digitação de Código (Typing Speed Race) -->
+      <div class="senai-card rounded-lg p-6 space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 border-slate-200 gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="bg-[#E30613] text-white text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                Módulo Prático de Agilidade
+              </span>
+              <span class="text-xs text-slate-500 font-semibold uppercase">
+                Typing Speed Race: Scripts Reais de Carga ETL
+              </span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mt-1">
+              Corrida de Digitação de Scripts SQL
+            </h3>
+          </div>
+
+          <!-- Seleção de Script da Corrida -->
+          <div class="flex min-w-0 flex-col sm:flex-row sm:items-center gap-2">
+            <label for="scriptSelector" class="text-xs font-bold text-slate-600">Script:</label>
+            <select id="scriptSelector" onchange="changeTypingScript(this.value)" class="w-full sm:w-auto max-w-full text-xs bg-slate-50 border border-slate-300 rounded px-3 py-1.5 font-medium text-slate-800 focus:ring-1 focus:ring-[#0054A6]">
+              <option value="0">Script 1: Carga DW Vendas (INNER JOIN + CASE WHEN)</option>
+              <option value="1">Script 2: Auditoria de Clientes (LEFT JOIN + CASE WHEN)</option>
+              <option value="2">Script 3: Sincronismo Catálogo (RIGHT JOIN + CASE WHEN)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Painel de Métricas em Tempo Real (HUD) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="bg-slate-900 text-white p-4 rounded-lg border-l-4 border-l-[#10B981] shadow-inner">
+            <div class="text-xs font-mono text-slate-400 uppercase tracking-wider">Velocidade (WPM)</div>
+            <div id="wpmDisplay" class="text-3xl font-black font-mono text-[#10B981] mt-1">0</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Palavras Por Minuto</div>
+          </div>
+          <div class="bg-slate-900 text-white p-4 rounded-lg border-l-4 border-l-[#38BDF8] shadow-inner">
+            <div class="text-xs font-mono text-slate-400 uppercase tracking-wider">Cadência (CPM)</div>
+            <div id="cpmDisplay" class="text-3xl font-black font-mono text-[#38BDF8] mt-1">0</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Caracteres Por Minuto</div>
+          </div>
+          <div class="bg-slate-900 text-white p-4 rounded-lg border-l-4 border-l-[#E30613] shadow-inner">
+            <div class="text-xs font-mono text-slate-400 uppercase tracking-wider">Precisão Global</div>
+            <div id="accDisplay" class="text-3xl font-black font-mono text-white mt-1">100%</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Taxa de Acerto de Teclas</div>
+          </div>
+          <div class="bg-slate-900 text-white p-4 rounded-lg border-l-4 border-l-[#0054A6] shadow-inner">
+            <div class="text-xs font-mono text-slate-400 uppercase tracking-wider">Cronômetro</div>
+            <div id="timerDisplay" class="text-3xl font-black font-mono text-amber-400 mt-1">00:00.0</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Tempo Decorrido</div>
+          </div>
+        </div>
+
+        <!-- Caixa Interativa de Exibição de Código & Entrada -->
+        <div class="bg-[#0F172A] rounded-lg p-5 border border-slate-800 relative">
+          <!-- Cabeçalho da Caixa de Código -->
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-xs text-slate-400 font-mono">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span id="scriptTitleDisplay">SCRIPT 1 // INSERT INTO DW_VENDAS COM INNER JOIN &amp; CASE WHEN</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="resetTypingRace()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded transition">
+                Reiniciar Prova
+              </button>
+            </div>
+          </div>
+
+          <!-- Display de Texto com Realce de Caractere -->
+          <div 
+            id="typingCodeDisplay" 
+            onclick="focusTypingInput()"
+            class="typing-code-display min-h-[140px] max-h-[260px] overflow-y-auto font-mono-code text-sm md:text-base leading-relaxed tracking-wide p-4 rounded bg-[#090D16] border border-slate-800 cursor-text select-none focus:border-[#0054A6]"
+          >
+            <!-- Caracteres gerados dinamicamente com classes char-correct, typing-cursor, char-error, char-pending -->
+          </div>
+
+          <!-- Input Oculto mas Focado para Captura Precisa de Teclado -->
+          <input 
+            type="text" 
+            id="typingHiddenInput" 
+            autocomplete="off" 
+            autocorrect="off" 
+            autocapitalize="off" 
+            spellcheck="false"
+            class="opacity-0 absolute pointer-events-none"
+          />
+
+          <!-- Dica de Orientação -->
+          <div class="mt-3 flex items-center justify-between text-xs text-slate-500 font-mono">
+            <span>Clique na caixa de código e comece a digitar o script. O cronômetro iniciará automaticamente na primeira tecla.</span>
+            <span id="typingStatus" class="font-bold text-amber-400">STATUS: AGUARDANDO DIGITAÇÃO</span>
+          </div>
+        </div>
+
+        <!-- Banner de Conclusão de Prova (Oculto por padrão) -->
+        <div id="raceCompletedBanner" class="hidden p-5 rounded-lg bg-emerald-950/60 border border-emerald-500 text-emerald-100 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 font-mono">Prova Concluída com Sucesso!</span>
+            <h4 class="text-lg font-bold text-white mt-0.5">Desempenho Registrado na Classificação da Turma</h4>
+            <p id="raceResultsSummary" class="text-xs text-emerald-200 mt-1 font-mono">
+              WPM: 0 | Precisão: 100% | Tempo: 0s
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="resetTypingRace()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded transition">
+              Digitar Novamente
+            </button>
+            <button onclick="scrollToLeaderboard()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded transition">
+              Ver Leaderboard
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tabela de Classificação da Turma (Leaderboard Multiplayer / Realtime) -->
+      <div id="leaderboardSection" class="senai-card rounded-lg p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 border-slate-200 gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="bg-[#0054A6] text-white text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                Multiplayer // GitHub Pages
+              </span>
+              <span id="firebaseStatusBadge" class="text-[11px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                Modo Local (localStorage Fallback)
+              </span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mt-1">
+              Classificação da Turma em Tempo Real (Leaderboard)
+            </h3>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="clearLocalLeaderboard()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded font-semibold transition">
+              Limpar Recordes Locais
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabela Renderizada Dinamicamente -->
+        <div class="overflow-x-auto border border-slate-200 rounded">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[#003D7A] text-white font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Posição</th>
+                <th class="py-3 px-4">Aluno / Matrícula</th>
+                <th class="py-3 px-4">Script Executado</th>
+                <th class="py-3 px-4 text-center">Velocidade (WPM)</th>
+                <th class="py-3 px-4 text-center">Cadência (CPM)</th>
+                <th class="py-3 px-4 text-center">Precisão</th>
+                <th class="py-3 px-4 text-center">Tempo</th>
+                <th class="py-3 px-4 text-right">Data / Horário</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardTbody" class="divide-y divide-slate-200 bg-white">
+              <!-- Renderizado Dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+
+        <p class="text-[11px] text-slate-500 italic">
+          * Com o Firebase configurado, o percurso, os alunos ativos e o ranking são compartilhados em tempo real. Sem configuração, o modo local continua disponível neste navegador.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SUBPAGINA: ACOMPANHAMENTO MULTIPLAYER DA COMPETICAO                     -->
+    <!-- ========================================================================= -->
+    <section id="tab4" class="hidden space-y-6">
+      <div class="senai-card rounded-lg p-6 border-l-4 border-l-[#E30613]">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-[#E30613]">Painel de acompanhamento</span>
+            <h2 class="text-2xl font-bold text-slate-900 mt-2">Competição ETL ao vivo</h2>
+            <p class="text-sm text-slate-600 mt-1 max-w-3xl">Acompanhe quem está digitando, quem concluiu cada etapa e quem chegou primeiro ao fim dos três scripts.</p>
+          </div>
+          <button onclick="switchTab('tab2')" class="px-4 py-2 bg-[#0054A6] hover:bg-[#003D7A] text-white text-xs font-bold rounded transition">Ir para a corrida</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="senai-card p-5 border-t-4 border-t-[#0054A6]"><span class="text-xs uppercase font-bold text-slate-500">Participantes online</span><strong id="liveParticipantCount" class="block text-3xl font-mono text-[#0054A6] mt-2">0</strong></div>
+        <div class="senai-card p-5 border-t-4 border-t-[#10B981]"><span class="text-xs uppercase font-bold text-slate-500">Etapa em andamento</span><strong id="liveStageCount" class="block text-3xl font-mono text-[#10B981] mt-2">1 / 3</strong></div>
+        <div class="senai-card p-5 border-t-4 border-t-[#E30613]"><span class="text-xs uppercase font-bold text-slate-500">Líder atual</span><strong id="liveLeaderName" class="block text-lg text-[#E30613] mt-3 truncate">Aguardando</strong></div>
+      </div>
+
+      <div class="senai-card p-6">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <div><h3 class="text-lg font-bold text-slate-900">Percurso da turma</h3><p id="liveCompetitionStatus" class="text-xs text-slate-500 mt-1">Aguardando conexão dos participantes.</p></div>
+          <span id="liveCompetitionBadge" class="text-xs font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded">Modo local</span>
+        </div>
+        <div id="liveCompetitionParticipants" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <p class="text-sm text-slate-500 italic">Nenhum participante conectado.</p>
+        </div>
+      </div>
+
+      <div class="senai-card p-6">
+        <h3 class="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 mb-4">Ranking final dos três scripts</h3>
+        <div class="overflow-x-auto border border-slate-200 rounded">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[#003D7A] text-white uppercase"><tr><th class="p-3">Posição</th><th class="p-3">Aluno</th><th class="p-3">Competição</th><th class="p-3">WPM</th><th class="p-3">Precisão</th><th class="p-3">Tempo total</th></tr></thead>
+            <tbody id="liveCompetitionLeaderboard" class="divide-y divide-slate-200 bg-white"><tr><td colspan="6" class="p-5 text-center text-slate-500">Nenhum resultado final.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- BLOCO 3: BANCO DE QUESTÕES REAIS DE CONCURSOS (15 QUESTÕES 2023 - 2026)   -->
+    <!-- ========================================================================= -->
+    <section id="tab3" class="hidden space-y-6">
+
+      <!-- Cabeçalho do Bloco de Questões -->
+      <div class="senai-card rounded-lg p-6 border-l-4 border-l-[#0054A6]">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="bg-[#0054A6] text-white text-xs px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                Simulado Técnico Profissional
+              </span>
+              <span class="text-xs text-slate-500 font-semibold uppercase">
+                Provas de 2023 a 2026 // FGV, FCC, CEBRASPE, QUADRIX, CONSULPAM
+              </span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mt-2">
+              Banco de Questões Reais de Concursos Públicos
+            </h2>
+            <p class="text-sm text-slate-600 mt-1 max-w-3xl">
+              Coletânea de 15 questões objetivas de concursos públicos federais, estaduais e municipais aplicadas nos últimos 4 anos, abrangendo integralmente: <code class="font-mono text-blue-700">LEFT JOIN</code>, <code class="font-mono text-blue-700">RIGHT JOIN</code>, <code class="font-mono text-blue-700">INNER JOIN</code>, <code class="font-mono text-blue-700">CASE WHEN</code>, <code class="font-mono text-blue-700">INSERT INTO ... SELECT</code> e Engenharia de ETL.
+            </p>
+          </div>
+
+          <button onclick="resetAllQuizAnswers()" class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 text-xs font-bold rounded transition">
+            Reiniciar Respostas
+          </button>
+        </div>
+
+        <!-- Indicador de Rendimento & Progresso do Quiz -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-5 border-t border-slate-200">
+          <div class="bg-slate-50 p-3.5 rounded border border-slate-200">
+            <span class="text-slate-500 text-[11px] uppercase font-bold tracking-wider block">Progresso</span>
+            <span id="quizProgressText" class="text-2xl font-bold text-slate-900">0 / 15</span>
+            <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
+              <div id="quizProgressBar" class="bg-[#0054A6] h-1.5 rounded-full" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="bg-emerald-50 p-3.5 rounded border border-emerald-200">
+            <span class="text-emerald-700 text-[11px] uppercase font-bold tracking-wider block">Acertos</span>
+            <span id="quizCorrectCount" class="text-2xl font-bold text-emerald-800">0</span>
+            <span class="text-[10px] text-emerald-600 block mt-1">respostas corretas</span>
+          </div>
+          <div class="bg-red-50 p-3.5 rounded border border-red-200">
+            <span class="text-red-700 text-[11px] uppercase font-bold tracking-wider block">Erros</span>
+            <span id="quizWrongCount" class="text-2xl font-bold text-red-800">0</span>
+            <span class="text-[10px] text-red-600 block mt-1">respostas incorretas</span>
+          </div>
+          <div class="bg-blue-50 p-3.5 rounded border border-blue-200">
+            <span class="text-blue-700 text-[11px] uppercase font-bold tracking-wider block">Aproveitamento</span>
+            <span id="quizAccuracyRate" class="text-2xl font-bold text-[#0054A6]">0.0%</span>
+            <span class="text-[10px] text-blue-600 block mt-1">taxa de acerto global</span>
+          </div>
+        </div>
+
+        <!-- Barra de Filtros por Banca e por Tópico -->
+        <div class="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-slate-200 text-xs">
+          <div class="flex items-center gap-2">
+            <label for="filterBanca" class="font-bold text-slate-700">Filtrar por Banca:</label>
+            <select id="filterBanca" onchange="applyQuizFilters()" class="bg-white border border-slate-300 rounded px-2.5 py-1.5 font-medium text-slate-700 focus:ring-1 focus:ring-[#0054A6]">
+              <option value="ALL">Todas as Bancas (15)</option>
+              <option value="FGV">FGV</option>
+              <option value="FCC">FCC</option>
+              <option value="CEBRASPE">CEBRASPE</option>
+              <option value="QUADRIX">QUADRIX</option>
+              <option value="CONSULPAM">CONSULPAM</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label for="filterTopic" class="font-bold text-slate-700">Filtrar por Tópico:</label>
+            <select id="filterTopic" onchange="applyQuizFilters()" class="bg-white border border-slate-300 rounded px-2.5 py-1.5 font-medium text-slate-700 focus:ring-1 focus:ring-[#0054A6]">
+              <option value="ALL">Todos os Tópicos</option>
+              <option value="JOIN">Junções ANSI (INNER/LEFT/RIGHT/FULL)</option>
+              <option value="CASE">Expressão Condicional CASE WHEN</option>
+              <option value="INSERT">Comando INSERT INTO ... SELECT</option>
+              <option value="ETL">Arquitetura de Dados &amp; Pipeline ETL</option>
+            </select>
+          </div>
+
+          <div id="filterCountDisplay" class="ml-auto text-slate-500 font-medium">
+            Exibindo 15 de 15 questões
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Lista de Questões Renderizadas Dinamicamente -->
+      <div id="questionsContainer" class="space-y-6">
+        <!-- Renderizado Dinamicamente pelo JavaScript -->
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- RODAPÉ INSTITUCIONAL SENAI -->
+  <footer class="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="font-bold text-white tracking-wider">SENAI // DEPARTAMENTO REGIONAL</span>
+        <span class="text-slate-600">|</span>
+        <span>Programa de Formação em Banco de Dados Relacional &amp; Engenharia de Dados</span>
+      </div>
+      <div class="text-center md:text-right text-slate-500">
+        Ambiente SPA Single Page • HTML5 + Tailwind CSS + Vanilla JS • Otimizado para GitHub Pages
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- MODAIS AUXILIARES                                                         -->
+  <!-- ========================================================================= -->
+
+  <!-- Modal 1: Identificação do Aluno / Operador -->
+  <div id="studentModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border-t-4 border-t-[#0054A6] space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-[#0054A6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+          Identificação do Aluno
+        </h3>
+        <button onclick="closeStudentModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <p class="text-xs text-slate-600 leading-normal">
+        Informe seu nome completo ou matrícula SENAI para registro de atividade nas sessões práticas e inclusão no ranking da turma.
+      </p>
+      <form onsubmit="saveStudentIdentification(event)" class="space-y-4">
+        <div>
+          <label for="studentNameInput" class="block text-xs font-bold text-slate-700 mb-1 uppercase">Nome Completo ou Matrícula:</label>
+          <input 
+            type="text" 
+            id="studentNameInput" 
+            required 
+            placeholder="Ex: Carlos Eduardo de Oliveira // MAT-2025091" 
+            class="w-full text-sm border border-slate-300 rounded px-3 py-2 text-slate-800 focus:border-[#0054A6] focus:ring-1 focus:ring-[#0054A6] outline-none"
+          />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeStudentModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded">
+            Cancelar
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-[#0054A6] hover:bg-[#003D7A] rounded shadow">
+            Confirmar e Prosseguir
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Inspecionar Tabelas Brutas do Caso Selecionado -->
+  <div id="tablesModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col border-t-4 border-t-[#0054A6]">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#0054A6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            Inspetor de Tabelas Brutas // Dados em Memória
+          </h3>
+          <p id="tableInspectorSubtitle" class="text-xs text-slate-500 font-mono mt-0.5">Caso Atual</p>
+        </div>
+        <button onclick="closeTablesInspectionModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+      </div>
+
+      <!-- Abas de Tabelas Disponíveis no Caso -->
+      <div id="inspectorTableTabs" class="flex border-b border-slate-200 bg-slate-50 px-4 pt-2 gap-1 overflow-x-auto text-xs font-mono">
+        <!-- Gerado Dinamicamente -->
+      </div>
+
+      <!-- Container da Tabela com Rolagem -->
+      <div id="inspectorTableContent" class="p-4 overflow-auto flex-1 text-xs font-mono">
+        <!-- Renderizado dinamicamente -->
+      </div>
+
+      <div class="p-3 border-t border-slate-200 bg-slate-50 flex justify-end">
+        <button onclick="closeTablesInspectionModal()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold rounded">
+          Fechar Inspetor
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Diagrama Arquitetural de Engenharia ETL -->
+  <div id="etlDocsModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 border-t-4 border-t-[#0054A6] space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="text-lg font-bold text-slate-900">
+          Arquitetura Técnica de Processamento ETL no MySQL Workbench
+        </h3>
+        <button onclick="closeEtlDocsModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-700 leading-relaxed">
+        <p>
+          O processo de ETL (Extract, Transform, Load) em bancos relacionais consiste em extrair dados operacionais (OLTP) ou arquivos estruturados (CSV/JSON), persistir provisoriamente em uma <strong>Staging Area</strong> e transformar via consultas SQL para alimentar o <strong>Data Warehouse</strong>.
+        </p>
+
+        <!-- Diagrama Visual em CSS -->
+        <div class="bg-slate-900 text-slate-200 p-4 rounded-lg font-mono text-xs space-y-3">
+          <div class="text-center font-bold text-sky-400 mb-2">FLUXO ATÔMICO DE CARGA ETL</div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-center">
+            <div class="bg-slate-800 p-3 rounded border border-slate-700">
+              <span class="text-amber-400 font-bold block mb-1">1. EXTRACT (STAGING)</span>
+              <p class="text-[11px] text-slate-300">Tabelas `stg_*` brutas recebem dados sem restrição de integridade estrangeira.</p>
+            </div>
+            <div class="bg-blue-950/80 p-3 rounded border border-blue-500">
+              <span class="text-emerald-400 font-bold block mb-1">2. TRANSFORM (DQL)</span>
+              <p class="text-[11px] text-slate-300">Cruzamentos com `JOINs`, saneamento de nulos com `COALESCE` e `CASE WHEN`.</p>
+            </div>
+            <div class="bg-slate-800 p-3 rounded border border-slate-700">
+              <span class="text-sky-400 font-bold block mb-1">3. LOAD (DW FACT/DIM)</span>
+              <p class="text-[11px] text-slate-300">Gravação em lote com `INSERT INTO dw_* SELECT ...` direto no destino.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-3.5 rounded border border-slate-200">
+          <h4 class="font-bold text-slate-800 mb-1 uppercase">Exemplo Canônico no MySQL:</h4>
+          <pre class="bg-slate-900 text-emerald-400 p-3 rounded font-mono text-[11px] overflow-x-auto leading-normal">
+INSERT INTO dw_faturamento (cliente_id, nome, valor_total, categoria)
+SELECT 
+    c.id, 
+    c.nome, 
+    COALESCE(p.valor, 0),
+    CASE 
+        WHEN p.valor IS NULL THEN 'SEM_FATURAMENTO'
+        WHEN p.valor &gt; 10000 THEN 'CLIENTE_PREMIUM'
+        ELSE 'CLIENTE_REGULAR'
+    END
+FROM stg_clientes c
+LEFT JOIN stg_pedidos p ON c.id = p.cliente_id;</pre>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="closeEtlDocsModal()" class="px-4 py-1.5 bg-[#0054A6] text-white text-xs font-bold rounded">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT VANILLA INTEGRADO (SEM DEPENDÊNCIAS DE FRAMEWORKS PESADOS)     -->
+  <!-- ========================================================================= -->
+  <script>
+    /* ==========================================================================
+       1. GERENCIAMENTO DE ESTADO GLOBAL E CONFIGURAÇÃO FIREBASE RTDB
+       ========================================================================== */
+    const STATE = {
+      activeTab: 'tab1',
+      studentName: localStorage.getItem('senai_student_name') || '',
+      clientId: localStorage.getItem('senai_client_id') || `client_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      currentCaseId: 101,
+      casesStatus: {
+        101: false,
+        102: false,
+        103: false
+      },
+      typing: {
+        scriptIndex: 0,
+        completedScripts: 0,
+        raceStartedAt: null,
+        raceResults: [],
+        totalCorrect: 0,
+        totalTyped: 0,
+        totalErrors: 0,
+        startTime: null,
+        timerInterval: null,
+        currentIndex: 0,
+        totalTyped: 0,
+        errors: 0,
+        isCompleted: false,
+        isActive: false
+      },
+      quiz: {
+        answers: {}, // questionId: selectedOption
+        filterBanca: 'ALL',
+        filterTopic: 'ALL'
+      }
+    };
+    localStorage.setItem('senai_client_id', STATE.clientId);
+
+    // CONFIGURACAO DO INSTRUTOR: preencha antes de publicar no GitHub Pages.
+    // Nao use chaves de Service Account ou qualquer chave privada neste arquivo.
+    const firebaseConfig = {
+      apiKey: "AIzaSyBz4myk8htUVcBTO6e0R_69qP6VjAH0J4c",
+      authDomain: "atv-dba.firebaseapp.com",
+      databaseURL: "https://atv-dba-default-rtdb.firebaseio.com",
+      projectId: "atv-dba",
+      storageBucket: "atv-dba.firebasestorage.app",
+      messagingSenderId: "474565676548",
+      appId: "1:474565676548:web:1af4380403dcbe1551ef51"
+    };
+
+    let firebaseDb = null;
+    let isFirebaseReady = false;
+    let firebaseParticipantRef = null;
+
+    function initFirebase() {
+      const badge = document.getElementById('firebaseStatusBadge');
+      if (typeof firebase !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'PREENCHA_AQUI') {
+        try {
+          if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+          }
+          firebaseDb = firebase.database();
+          const connectRealtime = () => {
+            if (firebase.auth && firebase.auth().currentUser) {
+              STATE.clientId = firebase.auth().currentUser.uid;
+              localStorage.setItem('senai_client_id', STATE.clientId);
+            }
+            isFirebaseReady = true;
+            if (badge) {
+              badge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+              badge.textContent = 'Conectado: Firebase Realtime';
+            }
+            listenFirebaseLeaderboard();
+            listenFirebaseParticipants();
+            publishPresence();
+            updateLiveCompetitionBadge(true);
+          };
+          if (firebase.auth) {
+            firebase.auth().signInAnonymously().then(connectRealtime).catch(err => {
+              console.warn('Autenticação anônima indisponível. Tentando RTDB sem autenticação:', err);
+              connectRealtime();
+            });
+          } else {
+            connectRealtime();
+          }
+          return;
+        } catch (err) {
+          console.warn('Falha ao inicializar Firebase RTDB. Ativando fallback em localStorage:', err);
+        }
+      }
+      // Fallback em localStorage
+      isFirebaseReady = false;
+      if (badge) {
+        badge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300';
+        badge.textContent = 'Modo Local (localStorage Fallback)';
+      }
+      updateMultiplayerStatus('Modo local: configure o Firebase para compartilhar o percurso com a turma.');
+      updateLiveCompetitionBadge(false);
+      renderLocalParticipants();
+      renderLocalLeaderboard();
+    }
+
+    function updateMultiplayerStatus(text) {
+      const status = document.getElementById('multiplayerLiveStatus');
+      if (status) status.textContent = text;
+    }
+
+    function getPresencePayload(status = 'aguardando') {
+      const script = TYPING_SCRIPTS[STATE.typing.scriptIndex];
+      const totalLength = TYPING_SCRIPTS.reduce((total, item) => total + item.code.length, 0);
+      const completedLength = TYPING_SCRIPTS.slice(0, STATE.typing.completedScripts).reduce((total, item) => total + item.code.length, 0);
+      const progressLength = STATE.typing.completedScripts >= TYPING_SCRIPTS.length ? totalLength : completedLength + STATE.typing.currentIndex;
+      return {
+        student: STATE.studentName || 'Aluno anônimo',
+        scriptTitle: `Script ${STATE.typing.scriptIndex + 1} de 3`,
+        stage: Math.min(3, STATE.typing.completedScripts + 1),
+        progress: script ? Math.round((progressLength / totalLength) * 100) : 0,
+        wpm: Number(document.getElementById('wpmDisplay')?.textContent || 0),
+        accuracy: document.getElementById('accDisplay')?.textContent || '100%',
+        status,
+        finishedAt: status === 'finalizado' ? firebase.database.ServerValue.TIMESTAMP : null,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+      };
+    }
+
+    function publishPresence(status = STATE.typing.isCompleted ? 'finalizado' : (STATE.typing.isActive ? 'digitando' : 'aguardando')) {
+      if (!isFirebaseReady || !firebaseDb) return;
+      if (!firebaseParticipantRef) {
+        firebaseParticipantRef = firebaseDb.ref(`senai_typing_race/participants/${STATE.clientId}`);
+        firebaseParticipantRef.onDisconnect().remove();
+      }
+      firebaseParticipantRef.update(getPresencePayload(status));
+    }
+
+    function listenFirebaseParticipants() {
+      if (!isFirebaseReady || !firebaseDb) return;
+      firebaseDb.ref('senai_typing_race/participants').on('value', snapshot => {
+        renderParticipants(snapshot.val() || {});
+      });
+    }
+
+    function renderParticipants(records) {
+      const entries = Object.values(records || {}).sort((a, b) => {
+        if (a.status === 'finalizado' && b.status !== 'finalizado') return -1;
+        if (b.status === 'finalizado' && a.status !== 'finalizado') return 1;
+        if (a.status === 'finalizado' && b.status === 'finalizado') {
+          return (Number(a.finishedAt) || Number.MAX_SAFE_INTEGER) - (Number(b.finishedAt) || Number.MAX_SAFE_INTEGER);
+        }
+        return (Number(b.progress) || 0) - (Number(a.progress) || 0);
+      });
+      const list = document.getElementById('multiplayerParticipantsList');
+      const liveList = document.getElementById('liveCompetitionParticipants');
+      if (!list) return;
+      if (!entries.length) {
+        list.innerHTML = '<div class="text-slate-500 italic">Aguardando participantes...</div>';
+        if (liveList) liveList.innerHTML = '<p class="text-sm text-slate-500 italic">Nenhum participante conectado.</p>';
+        updateMultiplayerStatus('Nenhum aluno conectado ao percurso no momento.');
+        updateLiveCompetitionSummary(entries, null);
+        return;
+      }
+      const winner = entries.find(entry => entry.status === 'finalizado');
+      updateMultiplayerStatus(winner ? `Na frente: ${winner.student} venceu esta corrida.` : `${entries.length} aluno(s) no percurso. Líder: ${entries[0].student} (${entries[0].progress || 0}%).`);
+      const participantMarkup = entries.slice(0, 9).map((entry, index) => {
+        const isWinner = entry.status === 'finalizado' && index === 0;
+        const statusLabel = isWinner ? 'CHEGOU PRIMEIRO' : entry.status === 'finalizado' ? 'CHEGOU' : entry.status === 'digitando' ? 'CORRENDO' : 'AGUARDANDO';
+        return `<div class="rounded border ${isWinner ? 'border-amber-400/70 bg-amber-400/10' : 'border-slate-700 bg-slate-800/70'} p-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="truncate font-bold ${isWinner ? 'text-amber-300' : 'text-slate-200'}">${index + 1}. ${escapeHtml(entry.student || 'Aluno')}</span>
+            <span class="text-[9px] ${isWinner ? 'text-amber-300' : 'text-slate-400'}">${statusLabel}</span>
+          </div>
+          <div class="mt-1 flex items-center justify-between text-slate-400"><span>${escapeHtml(entry.scriptTitle || 'Script')}</span><span>${entry.progress || 0}%</span></div>
+          <div class="mt-1 h-1 rounded bg-slate-700"><div class="h-1 rounded bg-emerald-400 transition-all" style="width:${Math.min(100, Math.max(0, Number(entry.progress) || 0))}%"></div></div>
+        </div>`;
+      }).join('');
+      list.innerHTML = participantMarkup;
+      if (liveList) liveList.innerHTML = participantMarkup;
+      updateLiveCompetitionSummary(entries, winner);
+    }
+
+    function updateLiveCompetitionBadge(connected) {
+      const badge = document.getElementById('liveCompetitionBadge');
+      if (!badge) return;
+      badge.textContent = connected ? 'Firebase conectado' : 'Modo local';
+      badge.className = connected
+        ? 'text-xs font-bold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded'
+        : 'text-xs font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded';
+    }
+
+    function updateLiveCompetitionSummary(entries, winner) {
+      const count = document.getElementById('liveParticipantCount');
+      const stage = document.getElementById('liveStageCount');
+      const leader = document.getElementById('liveLeaderName');
+      const status = document.getElementById('liveCompetitionStatus');
+      if (count) count.textContent = entries.length;
+      if (stage) stage.textContent = winner ? '3 / 3' : `${entries[0]?.stage || 1} / 3`;
+      if (leader) leader.textContent = winner ? winner.student : entries[0]?.student || 'Aguardando';
+      if (status) status.textContent = winner ? `${winner.student} chegou primeiro à linha final.` : entries.length ? `${entries.length} participante(s) em andamento. Acompanhe as etapas em tempo real.` : 'Aguardando conexão dos participantes.';
+    }
+
+    function renderLocalParticipants() {
+      renderParticipants({
+        local: {
+          student: STATE.studentName || 'Aluno anônimo',
+          scriptTitle: `Script ${STATE.typing.scriptIndex + 1} de 3`,
+          stage: Math.min(3, STATE.typing.completedScripts + 1),
+          progress: Math.round(((STATE.typing.completedScripts >= TYPING_SCRIPTS.length ? TYPING_SCRIPTS.reduce((total, item) => total + item.code.length, 0) : TYPING_SCRIPTS.slice(0, STATE.typing.completedScripts).reduce((total, item) => total + item.code.length, 0) + STATE.typing.currentIndex) / TYPING_SCRIPTS.reduce((total, item) => total + item.code.length, 0)) * 100),
+          status: STATE.typing.isCompleted ? 'finalizado' : STATE.typing.isActive ? 'digitando' : 'aguardando'
+        }
+      });
+    }
+
+    /* ==========================================================================
+       2. NAVEGAÇÃO POR ABAS E IDENTIFICAÇÃO DO ALUNO
+       ========================================================================== */
+    function switchTab(tabId) {
+      STATE.activeTab = tabId;
+      ['tab1', 'tab2', 'tab3', 'tab4'].forEach((id, idx) => {
+        const section = document.getElementById(id);
+        const btn = document.getElementById('tabBtn' + (idx + 1));
+        if (id === tabId) {
+          section.classList.remove('hidden');
+          btn.className = 'px-4 py-2.5 rounded-t font-semibold transition border-b-2 flex items-center gap-2 text-white border-white bg-[#003D7A]';
+        } else {
+          section.classList.add('hidden');
+          btn.className = 'px-4 py-2.5 rounded-t font-semibold transition border-b-2 flex items-center gap-2 text-blue-100 border-transparent hover:text-white hover:bg-white/10';
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateStudentLabel() {
+      const label = document.getElementById('navStudentLabel');
+      if (label) {
+        label.textContent = STATE.studentName ? STATE.studentName : 'Não Identificado';
+      }
+    }
+
+    function openStudentModal() {
+      const modal = document.getElementById('studentModal');
+      const input = document.getElementById('studentNameInput');
+      input.value = STATE.studentName;
+      modal.classList.remove('hidden');
+      input.focus();
+    }
+
+    function closeStudentModal() {
+      document.getElementById('studentModal').classList.add('hidden');
+    }
+
+    function saveStudentIdentification(e) {
+      e.preventDefault();
+      const val = document.getElementById('studentNameInput').value.trim();
+      if (val) {
+        STATE.studentName = val;
+        localStorage.setItem('senai_student_name', val);
+        updateStudentLabel();
+        publishPresence();
+        if (!isFirebaseReady) renderLocalParticipants();
+        closeStudentModal();
+      }
+    }
+
+    /* ==========================================================================
+       3. BLOCO 1: DATABASE DETECTIVE (CATÁLOGO DE DADOS E CASOS)
+       ========================================================================== */
+    const DATABASE_CATALOG = {
+      101: {
+        code: "DOSSIÊ 101 // AUDITORIA INTERNA",
+        title: "Divergência na Folha de Pagamento Corporativa",
+        scenario: "A controladoria interna detectou divergências entre salários contratuais e proventos pagos no último mês fiscal. Suspeita-se de lançamento indevido de bonificações e inconsistências contábeis. É necessário auditar os pagamentos confrontando cargos, departamentos e salários base.",
+        objective: "Cruze 'tb_funcionarios', 'tb_departamentos' e 'tb_pagamentos' utilizando junções. Filtre apenas os casos em que 'p.valor_pago > f.salario_base'. Projete nome, nome_departamento, salario_base, valor_pago e utilize CASE WHEN para classificar o desvio: se a diferença for maior que 2000, 'DESVIO CRITICO'; caso contrário, 'DESVIO MODERADO'.",
+        suggestedQuery: `SELECT 
+    f.nome,
+    d.nome_departamento,
+    f.salario_base,
+    p.valor_pago,
+    (p.valor_pago - f.salario_base) AS diferenca,
+    CASE 
+        WHEN (p.valor_pago - f.salario_base) > 2000 THEN 'DESVIO CRITICO'
+        ELSE 'DESVIO MODERADO'
+    END AS classificacao_desvio
+FROM tb_funcionarios f
+INNER JOIN tb_departamentos d ON f.dep_id = d.id
+INNER JOIN tb_pagamentos p ON f.id = p.func_id
+WHERE p.valor_pago > f.salario_base
+ORDER BY p.valor_pago DESC;`,
+        schema: [
+          { table: "tb_departamentos", cols: ["id (PK)", "nome_departamento", "orcamento_teto"] },
+          { table: "tb_funcionarios", cols: ["id (PK)", "nome", "cargo", "salario_base", "dep_id (FK)"] },
+          { table: "tb_pagamentos", cols: ["id (PK)", "func_id (FK)", "mes_referencia", "valor_pago", "status_pagamento"] }
+        ],
+        tables: {
+          tb_departamentos: [
+            { id: 1, nome_departamento: "Engenharia", orcamento_teto: 50000 },
+            { id: 2, nome_departamento: "Operações", orcamento_teto: 35000 },
+            { id: 3, nome_departamento: "Tecnologia", orcamento_teto: 42000 },
+            { id: 4, nome_departamento: "Financeiro", orcamento_teto: 30000 }
+          ],
+          tb_funcionarios: [
+            { id: 101, nome: "Carlos Silva", cargo: "Engenheiro Pleno", salario_base: 7500, dep_id: 1 },
+            { id: 102, nome: "Mariana Costa", cargo: "Analista de Sistemas", salario_base: 6200, dep_id: 3 },
+            { id: 103, nome: "Roberto Alves", cargo: "Coordenador TI", salario_base: 9000, dep_id: 3 },
+            { id: 104, nome: "Fernanda Lima", cargo: "Operador Fabril", salario_base: 3200, dep_id: 2 },
+            { id: 105, nome: "Lucas Rocha", cargo: "Assistente Financeiro", salario_base: 3800, dep_id: 4 },
+            { id: 106, nome: "Juliana Dias", cargo: "Analista Contábil", salario_base: 5500, dep_id: 4 }
+          ],
+          tb_pagamentos: [
+            { id: 1, func_id: 101, mes_referencia: "2025-05", valor_pago: 7500, status_pagamento: "PAGO" },
+            { id: 2, func_id: 102, mes_referencia: "2025-05", valor_pago: 9400, status_pagamento: "PAGO" }, // Desvio: 3200 (CRÍTICO)
+            { id: 3, func_id: 103, mes_referencia: "2025-05", valor_pago: 10200, status_pagamento: "PAGO" }, // Desvio: 1200 (MODERADO)
+            { id: 4, func_id: 104, mes_referencia: "2025-05", valor_pago: 3200, status_pagamento: "PAGO" },
+            { id: 5, func_id: 105, mes_referencia: "2025-05", valor_pago: 6100, status_pagamento: "PAGO" }, // Desvio: 2300 (CRÍTICO)
+            { id: 6, func_id: 106, mes_referencia: "2025-05", valor_pago: 5500, status_pagamento: "PAGO" }
+          ]
+        },
+        validator: (rows) => {
+          // Deve identificar exatamente 3 registros (Mariana, Roberto, Lucas)
+          if (!rows || rows.length !== 3) {
+            return {
+              ok: false,
+              msg: `Esperava-se encontrar exatamente 3 registros de divergência salarial, mas a consulta retornou ${rows ? rows.length : 0} registros. Verifique a cláusula WHERE (p.valor_pago > f.salario_base).`
+            };
+          }
+          // Verificar se contém as classificações esperadas
+          const rowText = JSON.stringify(rows).toUpperCase();
+          const hasCritico = rowText.includes('CRITICO');
+          const hasModerado = rowText.includes('MODERADO');
+          if (!hasCritico || !hasModerado) {
+            return {
+              ok: false,
+              msg: "A expressão CASE WHEN deve classificar valores com diferença > 2000 como 'DESVIO CRITICO' e as demais como 'DESVIO MODERADO'."
+            };
+          }
+          return {
+            ok: true,
+            msg: "Evidência confirmada! As 3 divergências foram identificadas com sucesso (Mariana Costa: Crítico, Lucas Rocha: Crítico, Roberto Alves: Moderado)."
+          };
+        }
+      },
+
+      102: {
+        code: "DOSSIÊ 102 // SEGURANÇA DA INFORMAÇÃO",
+        title: "Auditoria de Log de Acessos e Tráfego Não Autorizado",
+        scenario: "O SOC (Security Operations Center) detectou tentativas anômalas de autenticação no servidor central. Suspeita-se de conexões oriundas de contas bloqueadas/inativas ou ataques por injeção com credenciais inexistentes no catálogo de usuários corporativos.",
+        objective: "Utilize LEFT JOIN entre 'tb_logs_acesso' e 'tb_usuarios'. Filtre os registros onde o usuário não existe no cadastro ('u.id IS NULL') OU a conta possui status diferente de 'ATIVO'. Utilize CASE WHEN para categorizar o risco: se 'u.id IS NULL' classifique como 'INVASAO EXTERNA', caso contrário 'VIOLACAO INTERNA'. Projete ip_origem, horario, status_login, login e o tipo_ameaca.",
+        suggestedQuery: `SELECT 
+    l.ip_origem,
+    l.horario,
+    l.status_login,
+    COALESCE(u.login, 'DESCONHECIDO') AS usuario_login,
+    CASE 
+        WHEN u.id IS NULL THEN 'INVASAO EXTERNA'
+        ELSE 'VIOLACAO INTERNA'
+    END AS tipo_ameaca
+FROM tb_logs_acesso l
+LEFT JOIN tb_usuarios u ON l.usuario_id = u.id
+WHERE u.id IS NULL OR u.status_conta <> 'ATIVO'
+ORDER BY l.horario DESC;`,
+        schema: [
+          { table: "tb_usuarios", cols: ["id (PK)", "login", "setor", "status_conta"] },
+          { table: "tb_logs_acesso", cols: ["id (PK)", "usuario_id (FK)", "ip_origem", "horario", "status_login"] }
+        ],
+        tables: {
+          tb_usuarios: [
+            { id: 1, login: "admin.rede", setor: "Infraestrutura", status_conta: "ATIVO" },
+            { id: 2, login: "marcos.dev", setor: "Desenvolvimento", status_conta: "ATIVO" },
+            { id: 3, login: "claudia.sec", setor: "Segurança", status_conta: "ATIVO" },
+            { id: 4, login: "antonio.ex", setor: "Consultoria", status_conta: "INATIVO" },
+            { id: 5, login: "patricia.rh", setor: "Recursos Humanos", status_conta: "BLOQUEADO" }
+          ],
+          tb_logs_acesso: [
+            { id: 1001, usuario_id: 1, ip_origem: "192.168.1.15", horario: "2025-05-10 08:30:12", status_login: "SUCESSO" },
+            { id: 1002, usuario_id: 2, ip_origem: "192.168.1.44", horario: "2025-05-10 08:45:00", status_login: "SUCESSO" },
+            { id: 1003, usuario_id: 4, ip_origem: "187.54.12.99", horario: "2025-05-10 02:14:22", status_login: "FALHA" }, // INATIVO -> VIOLAÇÃO INTERNA
+            { id: 1004, usuario_id: 99, ip_origem: "45.160.22.10", horario: "2025-05-10 03:02:11", status_login: "FALHA" }, // Inexistente -> INVASÃO EXTERNA
+            { id: 1005, usuario_id: 5, ip_origem: "192.168.1.80", horario: "2025-05-10 09:12:05", status_login: "FALHA" }, // BLOQUEADO -> VIOLAÇÃO INTERNA
+            { id: 1006, usuario_id: 88, ip_origem: "194.26.29.5", horario: "2025-05-10 04:20:00", status_login: "FALHA" }   // Inexistente -> INVASÃO EXTERNA
+          ]
+        },
+        validator: (rows) => {
+          if (!rows || rows.length !== 4) {
+            return {
+              ok: false,
+              msg: `Esperava-se identificar 4 eventos de acessos não autorizados (2 externos e 2 internos), mas foram retornados ${rows ? rows.length : 0}. Verifique a cláusula WHERE e o LEFT JOIN.`
+            };
+          }
+          const text = JSON.stringify(rows).toUpperCase();
+          if (!text.includes('EXTERNA') || !text.includes('INTERNA')) {
+            return {
+              ok: false,
+              msg: "A coluna de classificação deve conter 'INVASAO EXTERNA' para IDs inexistentes e 'VIOLACAO INTERNA' para contas inativas/bloqueadas."
+            };
+          }
+          return {
+            ok: true,
+            msg: "Evidência confirmada! As 4 violações de segurança (IPs externos 45.160.22.10 e 194.26.29.5, além dos usuários inativos/bloqueados) foram catalogadas com sucesso."
+          };
+        }
+      },
+
+      103: {
+        code: "DOSSIÊ 103 // ENGENHARIA DE DADOS & ETL",
+        title: "Inconsistência de Estoque e Saneamento ETL",
+        scenario: "O pipeline noturno de extração falhou e o Data Warehouse ficou desatualizado em relação à Staging Area. Determinados SKUs foram cadastrados sem categoria, enquanto outros sequer foram carregados na dimensão de catálogo do DW.",
+        objective: "Utilize LEFT JOIN entre 'stg_produtos' e 'dw_catalogo' para mapear as divergências. Filtre registros onde o produto não consta no DW ('dw.codigo_sku IS NULL') OU a categoria da staging é nula ('s.categoria_id IS NULL'). Crie a coluna 'acao_sugerida' com CASE WHEN: se ambos forem nulos, 'REJEICAO TOTAL'; se apenas não constar no DW, 'PENDENTE DE CARGA'; caso contrário, 'CORRECAO DE METADADOS'.",
+        suggestedQuery: `SELECT 
+    s.codigo_sku,
+    s.descricao,
+    s.preco_custo,
+    COALESCE(dw.preco_venda, 0) AS preco_dw,
+    CASE 
+        WHEN dw.codigo_sku IS NULL AND s.categoria_id IS NULL THEN 'REJEICAO TOTAL'
+        WHEN dw.codigo_sku IS NULL THEN 'PENDENTE DE CARGA'
+        ELSE 'CORRECAO DE METADADOS'
+    END AS acao_sugerida
+FROM stg_produtos s
+LEFT JOIN dw_catalogo dw ON s.codigo_sku = dw.codigo_sku
+WHERE dw.codigo_sku IS NULL OR s.categoria_id IS NULL
+ORDER BY s.codigo_sku;`,
+        schema: [
+          { table: "stg_produtos", cols: ["codigo_sku (PK)", "descricao", "preco_custo", "categoria_id (FK)"] },
+          { table: "dw_catalogo", cols: ["codigo_sku (PK)", "descricao", "preco_venda", "categoria_id"] },
+          { table: "tb_categorias", cols: ["id (PK)", "nome_categoria"] }
+        ],
+        tables: {
+          stg_produtos: [
+            { codigo_sku: "SKU-001", descricao: "Servidor Rack 2U Xeon", preco_custo: 12500, categoria_id: 10 },
+            { codigo_sku: "SKU-002", descricao: "Switch Gerenciavel 48p", preco_custo: 3800, categoria_id: 10 },
+            { codigo_sku: "SKU-003", descricao: "Patch Panel Cat6 24p", preco_custo: 240, categoria_id: 10 },
+            { codigo_sku: "SKU-004", descricao: "Nobreak Senoidal 3kVA", preco_custo: 4100, categoria_id: null }, // Categoria Nula (consta no DW? Não, mas tem no catálogo? Ver DW)
+            { codigo_sku: "SKU-005", descricao: "Cabo Fibra Monomodo 50m", preco_custo: 180, categoria_id: 20 }, // Não consta no DW -> Pendente
+            { codigo_sku: "SKU-006", descricao: "Transceiver SFP+ 10G", preco_custo: 320, categoria_id: null }   // Ambos nulos -> Rejeição Total
+          ],
+          dw_catalogo: [
+            { codigo_sku: "SKU-001", descricao: "Servidor Rack 2U Xeon", preco_venda: 18500, categoria_id: 10 },
+            { codigo_sku: "SKU-002", descricao: "Switch Gerenciavel 48p", preco_venda: 5200, categoria_id: 10 },
+            { codigo_sku: "SKU-003", descricao: "Patch Panel Cat6 24p", preco_venda: 390, categoria_id: 10 }
+          ],
+          tb_categorias: [
+            { id: 10, nome_categoria: "Infraestrutura de Rede" },
+            { id: 20, nome_categoria: "Conectividade Óptica" }
+          ]
+        },
+        validator: (rows) => {
+          if (!rows || rows.length !== 3) {
+            return {
+              ok: false,
+              msg: `Esperava-se identificar 3 itens em não conformidade (SKU-004, SKU-005, SKU-006), mas foram retornados ${rows ? rows.length : 0}. Verifique os critérios de filtro.`
+            };
+          }
+          const text = JSON.stringify(rows).toUpperCase();
+          if (!text.includes('REJEICAO') && !text.includes('PENDENTE')) {
+            return {
+              ok: false,
+              msg: "Verifique a lógica do CASE WHEN para definir 'REJEICAO TOTAL' e 'PENDENTE DE CARGA'."
+            };
+          }
+          return {
+            ok: true,
+            msg: "Evidência confirmada! O pipeline identificou com precisão os registros que exigem saneamento antes da carga final no DW."
+          };
+        }
+      }
+    };
+
+    function selectCase(caseId) {
+      STATE.currentCaseId = caseId;
+      const data = DATABASE_CATALOG[caseId];
+
+      // Atualiza destaques nos cards
+      [101, 102, 103].forEach(id => {
+        const card = document.getElementById('caseCard' + id);
+        if (id === caseId) {
+          card.className = 'senai-card rounded-lg p-5 cursor-pointer border-2 transition hover:shadow-md border-[#0054A6] bg-blue-50/20';
+        } else {
+          card.className = 'senai-card rounded-lg p-5 cursor-pointer border-2 transition hover:shadow-md border-transparent hover:border-slate-300';
+        }
+      });
+
+      // Atualiza textos do caso
+      document.getElementById('caseDossierCode').textContent = data.code;
+      document.getElementById('caseTitle').textContent = data.title;
+      document.getElementById('caseScenario').textContent = data.scenario;
+      document.getElementById('caseObjective').innerHTML = data.objective;
+
+      // Renderiza Esquema
+      const schemaCont = document.getElementById('caseSchemaContainer');
+      schemaCont.innerHTML = data.schema.map(s => `
+        <div class="border-b border-slate-200 pb-1.5 last:border-0">
+          <span class="text-[#0054A6] font-bold block">${s.table}</span>
+          <span class="text-slate-600 text-[10.5px]">${s.cols.join(', ')}</span>
+        </div>
+      `).join('');
+
+      // Limpa alertas e carrega modelo inicial no editor
+      hideValidationAlert();
+      document.getElementById('sqlEditor').value = data.suggestedQuery;
+      document.getElementById('queryMetrics').textContent = 'Consulta carregada no editor.';
+    }
+
+    function loadSuggestedQuery() {
+      const data = DATABASE_CATALOG[STATE.currentCaseId];
+      document.getElementById('sqlEditor').value = data.suggestedQuery;
+      hideValidationAlert();
+    }
+
+    function clearEditor() {
+      document.getElementById('sqlEditor').value = '';
+      hideValidationAlert();
+    }
+
+    function insertSqlSnippet(snippet) {
+      const editor = document.getElementById('sqlEditor');
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      let textToInsert = '';
+      if (snippet === 'INNER JOIN') textToInsert = 'INNER JOIN tabela t ON f.id = t.func_id ';
+      if (snippet === 'LEFT JOIN') textToInsert = 'LEFT JOIN tabela t ON f.id = t.func_id ';
+      if (snippet === 'CASE WHEN') textToInsert = 'CASE WHEN condicao THEN valor1 ELSE valor2 END AS coluna ';
+      if (snippet === 'WHERE IS NULL') textToInsert = 'WHERE coluna IS NULL ';
+      editor.value = editor.value.substring(0, start) + textToInsert + editor.value.substring(end);
+      editor.focus();
+    }
+
+    /* ==========================================================================
+       4. INTERPRETADOR SQL RELACIONAL EM JAVASCRIPT VANILLA
+       ========================================================================== */
+    function runSqlInBrowser(query, caseId) {
+      const startTime = performance.now();
+      const caseData = DATABASE_CATALOG[caseId];
+      if (!caseData) throw new Error("Catálogo de dados não encontrado para este caso.");
+
+      // Limpeza e normalização básica da query
+      let q = query.trim();
+      if (q.endsWith(';')) q = q.slice(0, -1).trim();
+
+      if (!q.toUpperCase().startsWith('SELECT')) {
+        throw new Error("Apenas consultas de leitura DQL ('SELECT') são suportadas neste terminal de auditoria.");
+      }
+
+      // Regex para decompor os blocos SELECT, FROM, WHERE, ORDER BY
+      // SELECT ... FROM ... [WHERE ...] [ORDER BY ...]
+      const fromIdx = q.search(/\bFROM\b/i);
+      if (fromIdx === -1) {
+        throw new Error("Cláusula FROM obrigatória não encontrada na consulta.");
+      }
+
+      const selectClause = q.substring(6, fromIdx).trim();
+      let rest = q.substring(fromIdx + 4).trim();
+
+      let orderClause = '';
+      const orderIdx = rest.search(/\bORDER\s+BY\b/i);
+      if (orderIdx !== -1) {
+        orderClause = rest.substring(orderIdx + 8).trim();
+        rest = rest.substring(0, orderIdx).trim();
+      }
+
+      let groupClause = '';
+      const groupIdx = rest.search(/\bGROUP\s+BY\b/i);
+      if (groupIdx !== -1) {
+        groupClause = rest.substring(groupIdx + 8).trim();
+        rest = rest.substring(0, groupIdx).trim();
+      }
+
+      let whereClause = '';
+      const whereIdx = rest.search(/\bWHERE\b/i);
+      if (whereIdx !== -1) {
+        whereClause = rest.substring(whereIdx + 5).trim();
+        rest = rest.substring(0, whereIdx).trim();
+      }
+
+      const fromAndJoins = rest.trim();
+
+      // Decomposição das tabelas e JOINs no bloco FROM
+      const joinRegex = /\b(INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN)\s+([a-zA-Z0-9_]+)(?:\s+([a-zA-Z0-9_]+))?\s+ON\s+([\s\S]+?)(?=\b(?:INNER|LEFT|RIGHT)\s+JOIN\b|$)/gi;
+      
+      let baseTablePart = fromAndJoins;
+      const joins = [];
+      let match;
+      const firstJoinIdx = fromAndJoins.search(/\b(INNER|LEFT|RIGHT)\s+JOIN\b/i);
+      if (firstJoinIdx !== -1) {
+        baseTablePart = fromAndJoins.substring(0, firstJoinIdx).trim();
+      }
+
+      // Tabela base
+      const baseTokens = baseTablePart.split(/\s+/);
+      const baseTableName = baseTokens[0];
+      const baseTableAlias = baseTokens[1] || baseTableName;
+
+      if (!caseData.tables[baseTableName]) {
+        throw new Error(`Tabela base '${baseTableName}' não encontrada no catálogo do caso.`);
+      }
+
+      // Cria dataset inicial a partir da tabela base
+      let currentRows = caseData.tables[baseTableName].map(row => {
+        const item = {};
+        for (let col in row) {
+          item[`${baseTableAlias}.${col}`] = row[col];
+          item[col] = row[col]; // alias global simplificado
+        }
+        return item;
+      });
+
+      // Processa JOINs se houver
+      while ((match = joinRegex.exec(fromAndJoins)) !== null) {
+        const joinType = match[1].toUpperCase().replace(/\s+/, ' ');
+        const joinTableName = match[2];
+        const joinAlias = match[3] || joinTableName;
+        const onCondition = match[4].trim();
+
+        if (!caseData.tables[joinTableName]) {
+          throw new Error(`Tabela '${joinTableName}' do JOIN não existe no catálogo do caso.`);
+        }
+
+        const targetTableRows = caseData.tables[joinTableName];
+        const newMerged = [];
+
+        // Parsing da condição ON (ex: f.dep_id = d.id)
+        const onParts = onCondition.split('=').map(s => s.trim());
+        const leftKey = onParts[0];
+        const rightKey = onParts[1];
+
+        if (joinType === 'INNER JOIN') {
+          for (let leftRow of currentRows) {
+            for (let rightRow of targetTableRows) {
+              if (evaluateEquality(leftRow, rightRow, leftKey, rightKey, joinAlias)) {
+                newMerged.push(mergeRow(leftRow, rightRow, joinAlias));
+              }
+            }
+          }
+          currentRows = newMerged;
+        } else if (joinType === 'LEFT JOIN') {
+          for (let leftRow of currentRows) {
+            let matched = false;
+            for (let rightRow of targetTableRows) {
+              if (evaluateEquality(leftRow, rightRow, leftKey, rightKey, joinAlias)) {
+                newMerged.push(mergeRow(leftRow, rightRow, joinAlias));
+                matched = true;
+              }
+            }
+            if (!matched) {
+              newMerged.push(mergeRowWithNulls(leftRow, targetTableRows[0], joinAlias));
+            }
+          }
+          currentRows = newMerged;
+        } else if (joinType === 'RIGHT JOIN') {
+          for (let rightRow of targetTableRows) {
+            let matched = false;
+            for (let leftRow of currentRows) {
+              if (evaluateEquality(leftRow, rightRow, leftKey, rightKey, joinAlias)) {
+                newMerged.push(mergeRow(leftRow, rightRow, joinAlias));
+                matched = true;
+              }
+            }
+            if (!matched) {
+              newMerged.push(mergeRightWithNulls(currentRows[0], rightRow, joinAlias));
+            }
+          }
+          currentRows = newMerged;
+        }
+      }
+
+      // Cláusula WHERE
+      if (whereClause) {
+        currentRows = currentRows.filter(row => evaluateWhere(row, whereClause));
+      }
+
+      // Agrupamento relacional com agregações escalares comuns do SQL.
+      if (groupClause) {
+        const groupKeys = groupClause.split(',').map(key => key.trim());
+        const grouped = new Map();
+        currentRows.forEach(row => {
+          const key = groupKeys.map(groupKey => String(getRowValue(row, groupKey))).join('\u0001');
+          if (!grouped.has(key)) grouped.set(key, []);
+          grouped.get(key).push(row);
+        });
+        currentRows = Array.from(grouped.values()).map(groupRows => ({
+          ...groupRows[0],
+          __groupRows: groupRows
+        }));
+      }
+
+      // Projeção SELECT (incluindo CASE WHEN e expressões)
+      const projectedRows = projectColumns(currentRows, selectClause);
+
+      // Cláusula ORDER BY
+      if (orderClause) {
+        const orderParts = orderClause.split(/\s+/);
+        const colToSort = orderParts[0];
+        const dir = (orderParts[1] || 'ASC').toUpperCase();
+        projectedRows.sort((a, b) => {
+          let valA = a[colToSort] !== undefined ? a[colToSort] : getByDeepKey(a, colToSort);
+          let valB = b[colToSort] !== undefined ? b[colToSort] : getByDeepKey(b, colToSort);
+          if (valA === valB) return 0;
+          if (valA === null || valA === undefined) return 1;
+          if (valB === null || valB === undefined) return -1;
+          if (dir === 'DESC') {
+            return valA < valB ? 1 : -1;
+          }
+          return valA > valB ? 1 : -1;
+        });
+      }
+
+      const endTime = performance.now();
+      return {
+        rows: projectedRows,
+        executionTimeMs: (endTime - startTime).toFixed(2),
+        rowCount: projectedRows.length
+      };
+    }
+
+    function evaluateEquality(leftRow, rightRow, leftKey, rightKey, rightAlias) {
+      let lVal = getRowValue(leftRow, leftKey);
+      let rVal = getRowValueFromObj(rightRow, rightKey, rightAlias);
+      if (lVal === undefined) {
+        lVal = getRowValueFromObj(rightRow, leftKey, rightAlias);
+        rVal = getRowValue(leftRow, rightKey);
+      }
+      return lVal !== null && lVal !== undefined && lVal == rVal;
+    }
+
+    function getRowValue(row, key) {
+      if (row[key] !== undefined) return row[key];
+      const parts = key.split('.');
+      if (parts.length > 1 && row[parts[1]] !== undefined) return row[parts[1]];
+      return undefined;
+    }
+
+    function getRowValueFromObj(obj, key, alias) {
+      const parts = key.split('.');
+      const col = parts.length > 1 ? parts[1] : key;
+      return obj[col];
+    }
+
+    function mergeRow(leftRow, rightRow, rightAlias) {
+      const res = { ...leftRow };
+      for (let col in rightRow) {
+        res[`${rightAlias}.${col}`] = rightRow[col];
+        if (res[col] === undefined) res[col] = rightRow[col];
+      }
+      return res;
+    }
+
+    function mergeRowWithNulls(leftRow, sampleRightRow, rightAlias) {
+      const res = { ...leftRow };
+      for (let col in sampleRightRow) {
+        res[`${rightAlias}.${col}`] = null;
+        if (res[col] === undefined) res[col] = null;
+      }
+      return res;
+    }
+
+    function mergeRightWithNulls(sampleLeftRow, rightRow, rightAlias) {
+      const res = {};
+      if (sampleLeftRow) {
+        for (let col in sampleLeftRow) {
+          res[col] = null;
+        }
+      }
+      for (let col in rightRow) {
+        res[`${rightAlias}.${col}`] = rightRow[col];
+        res[col] = rightRow[col];
+      }
+      return res;
+    }
+
+    function evaluateWhere(row, conditionStr) {
+      let cond = conditionStr.trim();
+      // Suporte a OR / AND composto
+      if (/\bOR\b/i.test(cond)) {
+        const parts = cond.split(/\bOR\b/i);
+        return parts.some(p => evaluateWhere(row, p));
+      }
+      if (/\bAND\b/i.test(cond)) {
+        const parts = cond.split(/\bAND\b/i);
+        return parts.every(p => evaluateWhere(row, p));
+      }
+
+      // Avaliação de predicado simples
+      cond = cond.trim();
+      if (/\bIS\s+NOT\s+NULL\b/i.test(cond)) {
+        const col = cond.replace(/\bIS\s+NOT\s+NULL\b/i, '').trim();
+        const v = getRowValue(row, col);
+        return v !== null && v !== undefined;
+      }
+      if (/\bIS\s+NULL\b/i.test(cond)) {
+        const col = cond.replace(/\bIS\s+NULL\b/i, '').trim();
+        const v = getRowValue(row, col);
+        return v === null || v === undefined;
+      }
+
+      const matchOp = cond.match(/(<=|>=|!=|<>|<|>|=)/);
+      if (matchOp) {
+        const op = matchOp[1];
+        const parts = cond.split(op).map(s => s.trim());
+        let leftVal = parseOperand(row, parts[0]);
+        let rightVal = parseOperand(row, parts[1]);
+
+        if (op === '=') return leftVal == rightVal;
+        if (op === '!=' || op === '<>') return leftVal != rightVal;
+        if (op === '>') return Number(leftVal) > Number(rightVal);
+        if (op === '<') return Number(leftVal) < Number(rightVal);
+        if (op === '>=') return Number(leftVal) >= Number(rightVal);
+        if (op === '<=') return Number(leftVal) <= Number(rightVal);
+      }
+      return true;
+    }
+
+    function parseOperand(row, token) {
+      token = token.trim();
+      if ((token.startsWith("'") && token.endsWith("'")) || (token.startsWith('"') && token.endsWith('"'))) {
+        return token.slice(1, -1);
+      }
+      if (!isNaN(Number(token))) return Number(token);
+      return getRowValue(row, token);
+    }
+
+    function projectColumns(rows, selectClause) {
+      if (!rows || rows.length === 0) return [];
+      if (selectClause.trim() === '*') {
+        return rows.map(r => {
+          const clean = {};
+          for (let k in r) {
+            if (!k.includes('.')) clean[k] = r[k];
+          }
+          return clean;
+        });
+      }
+
+      // Tratamento para extrair colunas, parênteses e bloco CASE WHEN ... END
+      const tokens = [];
+      let buffer = '';
+      let caseDepth = 0;
+      let parenDepth = 0;
+      for (let i = 0; i < selectClause.length; i++) {
+        const char = selectClause[i];
+        if (selectClause.substring(i, i + 4).toUpperCase() === 'CASE') caseDepth++;
+        if (selectClause.substring(i, i + 3).toUpperCase() === 'END') caseDepth--;
+        if (char === '(') parenDepth++;
+        if (char === ')') parenDepth--;
+        if (char === ',' && caseDepth <= 0 && parenDepth <= 0) {
+          tokens.push(buffer.trim());
+          buffer = '';
+        } else {
+          buffer += char;
+        }
+      }
+      if (buffer.trim()) tokens.push(buffer.trim());
+
+      return rows.map(row => {
+        const projected = {};
+        tokens.forEach(tok => {
+          // Verifica apelido AS
+          const asMatch = tok.match(/([\s\S]+?)\s+AS\s+([a-zA-Z0-9_]+)$/i);
+          let expr = tok;
+          let alias = tok;
+          if (asMatch) {
+            expr = asMatch[1].trim();
+            alias = asMatch[2].trim();
+          } else {
+            const parts = tok.split(/\s+/);
+            if (parts.length === 2) {
+              expr = parts[0];
+              alias = parts[1];
+            } else {
+              const dotParts = tok.split('.');
+              alias = dotParts[dotParts.length - 1].replace(/[^a-zA-Z0-9_]/g, '');
+            }
+          }
+
+          // Avaliação da Expressão
+          const aggregateMatch = expr.match(/^(COUNT|SUM|AVG|MIN|MAX)\s*\((.*)\)$/i);
+          if (aggregateMatch) {
+            const groupRows = row.__groupRows || [row];
+            const aggregate = aggregateMatch[1].toUpperCase();
+            const aggregateExpr = aggregateMatch[2].trim();
+            const values = aggregateExpr === '*'
+              ? groupRows
+              : groupRows.map(groupRow => parseOperand(groupRow, aggregateExpr)).filter(value => value !== null && value !== undefined);
+            if (aggregate === 'COUNT') projected[alias] = values.length;
+            if (aggregate === 'SUM') projected[alias] = values.reduce((total, value) => total + Number(value || 0), 0);
+            if (aggregate === 'AVG') projected[alias] = values.length ? values.reduce((total, value) => total + Number(value || 0), 0) / values.length : null;
+            if (aggregate === 'MIN') projected[alias] = values.length ? Math.min(...values) : null;
+            if (aggregate === 'MAX') projected[alias] = values.length ? Math.max(...values) : null;
+          } else if (expr.toUpperCase().startsWith('CASE')) {
+            projected[alias] = evaluateCaseWhen(row, expr);
+          } else if (expr.toUpperCase().startsWith('COALESCE')) {
+            const inner = expr.match(/\(([\s\S]+)\)/);
+            if (inner) {
+              const args = inner[1].split(',').map(s => s.trim());
+              const val1 = parseOperand(row, args[0]);
+              const val2 = parseOperand(row, args[1]);
+              projected[alias] = (val1 !== null && val1 !== undefined) ? val1 : val2;
+            } else {
+              projected[alias] = null;
+            }
+          } else if (expr.includes('-')) {
+            const subParts = expr.replace(/[()]/g, '').split('-').map(s => s.trim());
+            const v1 = Number(parseOperand(row, subParts[0])) || 0;
+            const v2 = Number(parseOperand(row, subParts[1])) || 0;
+            projected[alias] = v1 - v2;
+          } else {
+            projected[alias] = getRowValue(row, expr);
+          }
+        });
+        return projected;
+      });
+    }
+
+    function evaluateCaseWhen(row, caseExpr) {
+      // Decompor WHEN ... THEN ... ELSE ... END
+      const clean = caseExpr.replace(/\bCASE\b/i, '').replace(/\bEND\b/i, '').trim();
+      const whenMatches = [...clean.matchAll(/WHEN\s+([\s\S]+?)\s+THEN\s+([\s\S]+?)(?=\s+WHEN|\s+ELSE|$)/gi)];
+      for (let m of whenMatches) {
+        const cond = m[1].trim();
+        const thenVal = m[2].trim();
+        if (evaluateConditionSimple(row, cond)) {
+          return unquote(thenVal);
+        }
+      }
+      const elseMatch = clean.match(/ELSE\s+([\s\S]+)$/i);
+      if (elseMatch) {
+        return unquote(elseMatch[1].trim());
+      }
+      return null;
+    }
+
+    function evaluateConditionSimple(row, cond) {
+      cond = cond.replace(/[()]/g, '').trim();
+      if (/\bAND\b/i.test(cond)) {
+        return cond.split(/\bAND\b/i).every(c => evaluateConditionSimple(row, c));
+      }
+      if (/\bOR\b/i.test(cond)) {
+        return cond.split(/\bOR\b/i).some(c => evaluateConditionSimple(row, c));
+      }
+      if (/\bIS\s+NULL\b/i.test(cond)) {
+        const col = cond.replace(/\bIS\s+NULL\b/i, '').trim();
+        const v = getRowValue(row, col);
+        return v === null || v === undefined;
+      }
+      if (/\bIS\s+NOT\s+NULL\b/i.test(cond)) {
+        const col = cond.replace(/\bIS\s+NOT\s+NULL\b/i, '').trim();
+        const v = getRowValue(row, col);
+        return v !== null && v !== undefined;
+      }
+      const matchOp = cond.match(/(<=|>=|!=|<>|<|>|=)/);
+      if (matchOp) {
+        const op = matchOp[1];
+        const parts = cond.split(op).map(s => s.trim());
+        let l = parts[0];
+        let r = parts[1];
+
+        let lVal = evaluateMathOrVal(row, l);
+        let rVal = evaluateMathOrVal(row, r);
+
+        if (op === '=') return lVal == rVal;
+        if (op === '!=' || op === '<>') return lVal != rVal;
+        if (op === '>') return Number(lVal) > Number(rVal);
+        if (op === '<') return Number(lVal) < Number(rVal);
+        if (op === '>=') return Number(lVal) >= Number(rVal);
+        if (op === '<=') return Number(lVal) <= Number(rVal);
+      }
+      return false;
+    }
+
+    function evaluateMathOrVal(row, expr) {
+      expr = expr.trim();
+      if (expr.includes('-')) {
+        const p = expr.split('-').map(s => s.trim());
+        return (Number(parseOperand(row, p[0])) || 0) - (Number(parseOperand(row, p[1])) || 0);
+      }
+      return parseOperand(row, expr);
+    }
+
+    function unquote(str) {
+      if ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+        return str.slice(1, -1);
+      }
+      if (!isNaN(Number(str))) return Number(str);
+      return str;
+    }
+
+    function getByDeepKey(obj, key) {
+      for (let k in obj) {
+        if (k.endsWith('.' + key) || k === key) return obj[k];
+      }
+      return undefined;
+    }
+
+    /* ==========================================================================
+       5. EXECUÇÃO E RENDERIZAÇÃO VISUAL DA TABELA DQL
+       ========================================================================== */
+    let lastQueryResult = null;
+
+    function executeStudentQuery() {
+      const query = document.getElementById('sqlEditor').value.trim();
+      const output = document.getElementById('queryOutputContainer');
+      const metrics = document.getElementById('queryMetrics');
+      hideValidationAlert();
+
+      if (!query) {
+        output.innerHTML = `<p class="text-xs text-amber-400 font-mono p-4">Aviso: O editor SQL está vazio. Insira uma instrução SELECT para executar.</p>`;
+        metrics.textContent = 'Erro: Nenhuma instrução fornecida.';
+        return;
+      }
+
+      try {
+        const result = runSqlInBrowser(query, STATE.currentCaseId);
+        lastQueryResult = result.rows;
+        metrics.textContent = `${result.rowCount} linha(s) retornada(s) em ${result.executionTimeMs} ms`;
+
+        if (result.rowCount === 0) {
+          output.innerHTML = `<p class="text-xs text-slate-400 font-mono p-6 text-center">Conjunto de resultados vazio (0 registros correspondentes aos filtros aplicados).</p>`;
+          return;
+        }
+
+        // Monta tabela visual
+        const headers = Object.keys(result.rows[0]);
+        let html = `
+          <table class="w-full text-left text-xs text-slate-200 border-collapse">
+            <thead class="bg-[#1E293B] text-sky-400 font-mono uppercase tracking-wider border-b border-slate-700 sticky top-0">
+              <tr>
+                ${headers.map(h => `<th class="py-2.5 px-3 font-semibold">${h}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 font-mono text-[11.5px]">
+              ${result.rows.map(row => `
+                <tr class="hover:bg-slate-800/60 transition">
+                  ${headers.map(h => {
+                    const val = row[h];
+                    if (val === null || val === undefined) {
+                      return `<td class="py-2 px-3 text-slate-500 italic"><span class="bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded text-[10px]">NULL</span></td>`;
+                    }
+                    if (typeof val === 'number') {
+                      return `<td class="py-2 px-3 text-emerald-400 font-semibold">${val.toLocaleString('pt-BR')}</td>`;
+                    }
+                    return `<td class="py-2 px-3 text-slate-200">${val}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        output.innerHTML = html;
+      } catch (err) {
+        output.innerHTML = `
+          <div class="p-4 bg-red-950/50 border border-red-800 text-red-300 font-mono text-xs">
+            <span class="font-bold text-[#E30613] block mb-1">ERRO DE EXECUÇÃO SQL:</span>
+            ${err.message}
+          </div>
+        `;
+        metrics.textContent = 'Erro de compilação/sintaxe.';
+        lastQueryResult = null;
+      }
+    }
+
+    function validateCaseEvidence() {
+      executeStudentQuery();
+      const alertBox = document.getElementById('validationAlertBox');
+      const caseData = DATABASE_CATALOG[STATE.currentCaseId];
+
+      if (!lastQueryResult) {
+        showValidationAlert(false, "Falha na Validação: É necessário que a consulta seja executada com sucesso antes de submeter a evidência.");
+        return;
+      }
+
+      const validation = caseData.validator(lastQueryResult);
+      if (validation.ok) {
+        STATE.casesStatus[STATE.currentCaseId] = true;
+        document.getElementById('caseBadge' + STATE.currentCaseId).className = 'px-2 py-0.5 rounded text-[11px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold';
+        document.getElementById('caseBadge' + STATE.currentCaseId).textContent = 'Resolvido';
+        showValidationAlert(true, validation.msg);
+      } else {
+        showValidationAlert(false, validation.msg);
+      }
+    }
+
+    function showValidationAlert(isSuccess, text) {
+      const box = document.getElementById('validationAlertBox');
+      box.classList.remove('hidden');
+      if (isSuccess) {
+        box.className = 'mx-4 mb-4 p-4 rounded text-xs font-mono font-medium border bg-emerald-950/80 border-emerald-500 text-emerald-200';
+        box.innerHTML = `
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+            <div>
+              <strong class="font-bold text-white block">EVIDÊNCIA FORENSE APROVADA:</strong>
+              ${text}
+            </div>
+          </div>
+        `;
+      } else {
+        box.className = 'mx-4 mb-4 p-4 rounded text-xs font-mono font-medium border bg-red-950/80 border-[#E30613] text-red-200';
+        box.innerHTML = `
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#E30613] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+            <div>
+              <strong class="font-bold text-white block">DIVERGÊNCIA IDENTIFICADA:</strong>
+              ${text}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function hideValidationAlert() {
+      const box = document.getElementById('validationAlertBox');
+      if (box) box.classList.add('hidden');
+    }
+
+    /* Inspetor de Tabelas Brutas em Memória */
+    function openTablesInspectionModal() {
+      const caseData = DATABASE_CATALOG[STATE.currentCaseId];
+      const tabs = document.getElementById('inspectorTableTabs');
+      const tableNames = Object.keys(caseData.tables);
+
+      document.getElementById('tableInspectorSubtitle').textContent = `${caseData.code} - ${caseData.title}`;
+
+      tabs.innerHTML = tableNames.map((name, i) => `
+        <button 
+          onclick="renderInspectorTable('${name}')" 
+          id="tabInsp_${name}"
+          class="px-3 py-1.5 rounded-t font-semibold ${i === 0 ? 'bg-white text-[#0054A6] border-t-2 border-[#0054A6]' : 'text-slate-600 hover:text-slate-900'}"
+        >
+          ${name} (${caseData.tables[name].length})
+        </button>
+      `).join('');
+
+      renderInspectorTable(tableNames[0]);
+      document.getElementById('tablesModal').classList.remove('hidden');
+    }
+
+    function renderInspectorTable(tableName) {
+      const caseData = DATABASE_CATALOG[STATE.currentCaseId];
+      const rows = caseData.tables[tableName];
+      const content = document.getElementById('inspectorTableContent');
+
+      // Atualiza aba ativa
+      Object.keys(caseData.tables).forEach(name => {
+        const btn = document.getElementById(`tabInsp_${name}`);
+        if (btn) {
+          btn.className = name === tableName 
+            ? 'px-3 py-1.5 rounded-t font-semibold bg-white text-[#0054A6] border-t-2 border-[#0054A6]'
+            : 'px-3 py-1.5 rounded-t font-semibold text-slate-600 hover:text-slate-900';
+        }
+      });
+
+      if (!rows || rows.length === 0) {
+        content.innerHTML = '<p class="text-slate-500">Tabela vazia.</p>';
+        return;
+      }
+
+      const headers = Object.keys(rows[0]);
+      content.innerHTML = `
+        <table class="w-full text-left border border-slate-200 divide-y divide-slate-200">
+          <thead class="bg-slate-100 font-bold text-slate-700">
+            <tr>${headers.map(h => `<th class="p-2 border-r border-slate-200">${h}</th>`).join('')}</tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 bg-white">
+            ${rows.map(r => `
+              <tr class="hover:bg-slate-50">
+                ${headers.map(h => {
+                  const v = r[h];
+                  return `<td class="p-2 border-r border-slate-200">${v === null ? '<span class="text-slate-400 italic font-mono">NULL</span>' : v}</td>`;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function closeTablesInspectionModal() {
+      document.getElementById('tablesModal').classList.add('hidden');
+    }
+
+    /* ==========================================================================
+       6. BLOCO 2: CORRIDA DE DIGITAÇÃO DE CÓDIGO (TYPING SPEED RACE)
+       ========================================================================== */
+    const TYPING_SCRIPTS = [
+      {
+        id: 1,
+        title: "SCRIPT 1 // INSERT INTO DW_VENDAS COM INNER JOIN & CASE WHEN",
+        code: "INSERT INTO dw_vendas (id, data_venda, status_tratado, produto) SELECT v.id, v.data, CASE WHEN v.status IS NULL THEN 'NAO_INFORMADO' ELSE v.status END, p.nome FROM stg_vendas v INNER JOIN tb_produtos p ON v.produto_id = p.id;"
+      },
+      {
+        id: 2,
+        title: "SCRIPT 2 // AUDITORIA DE CLIENTES COM LEFT JOIN & CASE WHEN",
+        code: "INSERT INTO dw_clientes_auditoria (cliente_id, nome, faturamento, categoria) SELECT c.id, c.nome, COALESCE(f.total, 0), CASE WHEN f.total IS NULL THEN 'SEM_MOVIMENTO' WHEN f.total >= 10000 THEN 'ALTO_VALOR' ELSE 'PADRAO' END FROM stg_clientes c LEFT JOIN stg_faturamento f ON c.id = f.cliente_id;"
+      },
+      {
+        id: 3,
+        title: "SCRIPT 3 // SINCRONISMO DE CATÁLOGO COM RIGHT JOIN & CASE WHEN",
+        code: "INSERT INTO dw_estoque_consolidado (sku, descricao, saldo_fisico, nivel_alerta) SELECT p.sku, p.nome, COALESCE(e.quantidade, 0), CASE WHEN e.quantidade IS NULL OR e.quantidade = 0 THEN 'RUPTURA' WHEN e.quantidade < 20 THEN 'CRITICO' ELSE 'NORMAL' END FROM stg_estoque e RIGHT JOIN tb_produtos p ON e.sku = p.sku;"
+      }
+    ];
+
+    function initTypingRace() {
+      const script = TYPING_SCRIPTS[STATE.typing.scriptIndex];
+      document.getElementById('scriptTitleDisplay').textContent = script.title;
+      renderTypingDisplay();
+      
+      const hiddenInput = document.getElementById('typingHiddenInput');
+      hiddenInput.value = '';
+      hiddenInput.oninput = handleTypingInput;
+      hiddenInput.onkeydown = handleTypingKeyDown;
+    }
+
+    function renderTypingDisplay() {
+      const script = TYPING_SCRIPTS[STATE.typing.scriptIndex];
+      const targetText = script.code;
+      const display = document.getElementById('typingCodeDisplay');
+      const curIdx = STATE.typing.currentIndex;
+
+      let html = '';
+      for (let i = 0; i < targetText.length; i++) {
+        const char = targetText[i];
+        const displayChar = char === ' ' ? '&nbsp;' : escapeHtml(char);
+
+        if (i < curIdx) {
+          html += `<span class="char-correct">${displayChar}</span>`;
+        } else if (i === curIdx) {
+          html += `<span class="typing-cursor bg-slate-700 text-white">${displayChar}</span>`;
+        } else {
+          html += `<span class="char-pending">${displayChar}</span>`;
+        }
+      }
+      display.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function focusTypingInput() {
+      if (STATE.typing.isCompleted) return;
+      const input = document.getElementById('typingHiddenInput');
+      input.focus();
+    }
+
+    function handleTypingKeyDown(e) {
+      if (STATE.typing.isCompleted) return;
+      // Inicia timer no primeiro caractere digitado
+      if (!STATE.typing.isActive && e.key.length === 1) {
+        startTypingTimer();
+      }
+    }
+
+    function handleTypingInput(e) {
+      if (STATE.typing.isCompleted) return;
+      const script = TYPING_SCRIPTS[STATE.typing.scriptIndex];
+      const targetText = script.code;
+      const inputVal = e.target.value;
+
+      if (!inputVal) return;
+
+      const typedChar = inputVal.slice(-1);
+      e.target.value = ''; // limpa buffer
+
+      STATE.typing.totalTyped++;
+      const expectedChar = targetText[STATE.typing.currentIndex];
+
+      if (typedChar === expectedChar) {
+        STATE.typing.currentIndex++;
+      } else {
+        STATE.typing.errors++;
+        STATE.typing.totalErrors++;
+        flashInputError();
+      }
+
+      updateTypingMetrics();
+      renderTypingDisplay();
+      publishPresence();
+      if (!isFirebaseReady) renderLocalParticipants();
+
+      // Checa se completou o script
+      if (STATE.typing.currentIndex >= targetText.length) {
+        completeTypingRace();
+      }
+    }
+
+    function flashInputError() {
+      const display = document.getElementById('typingCodeDisplay');
+      display.classList.add('border-[#E30613]');
+      setTimeout(() => {
+        display.classList.remove('border-[#E30613]');
+      }, 180);
+    }
+
+    function startTypingTimer() {
+      STATE.typing.isActive = true;
+      if (!STATE.typing.raceStartedAt) STATE.typing.raceStartedAt = performance.now();
+      STATE.typing.startTime = STATE.typing.startTime || STATE.typing.raceStartedAt;
+      document.getElementById('typingStatus').textContent = 'STATUS: EM ANDAMENTO';
+      document.getElementById('typingStatus').className = 'font-bold text-[#10B981]';
+      publishPresence('digitando');
+      if (!isFirebaseReady) renderLocalParticipants();
+
+      STATE.typing.timerInterval = setInterval(() => {
+        updateTypingMetrics();
+      }, 100);
+    }
+
+    function getCompletedCharacters() {
+      return TYPING_SCRIPTS.slice(0, STATE.typing.completedScripts).reduce((total, item) => total + item.code.length, 0);
+    }
+
+    function updateTypingMetrics() {
+      if (!STATE.typing.startTime) return;
+      const elapsedMs = performance.now() - (STATE.typing.raceStartedAt || STATE.typing.startTime);
+      const elapsedSec = elapsedMs / 1000;
+      const elapsedMin = elapsedSec / 60;
+
+      // Timer Display format mm:ss.d
+      const mins = Math.floor(elapsedSec / 60);
+      const secs = Math.floor(elapsedSec % 60);
+      const dec = Math.floor((elapsedSec % 1) * 10);
+      document.getElementById('timerDisplay').textContent = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${dec}`;
+
+      // WPM = (corretos / 5) / minutos
+      const correctChars = getCompletedCharacters() + STATE.typing.currentIndex;
+      const wpm = elapsedMin > 0 ? Math.round((correctChars / 5) / elapsedMin) : 0;
+      const cpm = elapsedMin > 0 ? Math.round(correctChars / elapsedMin) : 0;
+
+      // Precisão = (total - erros) / total
+      const acc = STATE.typing.totalTyped > 0 
+        ? Math.max(0, Math.round(((STATE.typing.totalTyped - STATE.typing.totalErrors) / STATE.typing.totalTyped) * 100))
+        : 100;
+
+      document.getElementById('wpmDisplay').textContent = wpm;
+      document.getElementById('cpmDisplay').textContent = cpm;
+      document.getElementById('accDisplay').textContent = `${acc}%`;
+    }
+
+    function completeTypingRace() {
+      clearInterval(STATE.typing.timerInterval);
+      STATE.typing.isActive = false;
+
+      STATE.typing.completedScripts++;
+      STATE.typing.raceResults.push({
+        scriptTitle: `Script ${STATE.typing.completedScripts}`,
+        chars: TYPING_SCRIPTS[STATE.typing.scriptIndex].code.length,
+        errors: STATE.typing.errors
+      });
+
+      if (STATE.typing.completedScripts < TYPING_SCRIPTS.length) {
+        STATE.typing.scriptIndex++;
+        STATE.typing.currentIndex = 0;
+        STATE.typing.errors = 0;
+        STATE.typing.startTime = performance.now();
+        document.getElementById('scriptSelector').value = STATE.typing.scriptIndex;
+        document.getElementById('scriptTitleDisplay').textContent = TYPING_SCRIPTS[STATE.typing.scriptIndex].title;
+        document.getElementById('typingStatus').textContent = `STATUS: SCRIPT ${STATE.typing.completedScripts} CONCLUÍDO • PRÓXIMO SCRIPT`;
+        document.getElementById('typingStatus').className = 'font-bold text-[#10B981]';
+        renderTypingDisplay();
+        publishPresence('digitando');
+        if (!isFirebaseReady) renderLocalParticipants();
+        setTimeout(focusTypingInput, 80);
+        STATE.typing.timerInterval = setInterval(updateTypingMetrics, 100);
+        return;
+      }
+
+      STATE.typing.isCompleted = true;
+      const elapsedSec = ((performance.now() - STATE.typing.raceStartedAt) / 1000).toFixed(1);
+      const finalWpm = document.getElementById('wpmDisplay').textContent;
+      const finalCpm = document.getElementById('cpmDisplay').textContent;
+      const finalAcc = document.getElementById('accDisplay').textContent;
+
+      document.getElementById('typingStatus').textContent = 'STATUS: FINALIZADO';
+      document.getElementById('typingStatus').className = 'font-bold text-sky-400';
+      publishPresence('finalizado');
+      if (!isFirebaseReady) renderLocalParticipants();
+
+      // Exibe Banner de Conclusão
+      const banner = document.getElementById('raceCompletedBanner');
+      banner.classList.remove('hidden');
+      document.getElementById('raceResultsSummary').textContent = 
+        `Operador: ${STATE.studentName || 'Não Identificado'} | WPM: ${finalWpm} | CPM: ${finalCpm} | Precisão: ${finalAcc} | Tempo Total: ${elapsedSec}s`;
+
+      // Submete Registro para Leaderboard (Firebase ou Local)
+      submitLeaderboardScore({
+        student: STATE.studentName || 'Aluno Anônimo',
+        scriptTitle: 'Competição completa • 3 scripts',
+        wpm: parseInt(finalWpm, 10),
+        cpm: parseInt(finalCpm, 10),
+        accuracy: finalAcc,
+        timeSec: elapsedSec,
+        scriptsCompleted: 3,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    function resetTypingRace() {
+      clearInterval(STATE.typing.timerInterval);
+      STATE.typing.startTime = null;
+      STATE.typing.raceStartedAt = null;
+      STATE.typing.currentIndex = 0;
+      STATE.typing.scriptIndex = 0;
+      STATE.typing.completedScripts = 0;
+      STATE.typing.raceResults = [];
+      STATE.typing.totalTyped = 0;
+      STATE.typing.errors = 0;
+      STATE.typing.totalErrors = 0;
+      STATE.typing.isCompleted = false;
+      STATE.typing.isActive = false;
+
+      document.getElementById('wpmDisplay').textContent = '0';
+      document.getElementById('cpmDisplay').textContent = '0';
+      document.getElementById('accDisplay').textContent = '100%';
+      document.getElementById('timerDisplay').textContent = '00:00.0';
+      document.getElementById('typingStatus').textContent = 'STATUS: AGUARDANDO DIGITAÇÃO';
+      document.getElementById('typingStatus').className = 'font-bold text-amber-400';
+      document.getElementById('raceCompletedBanner').classList.add('hidden');
+      document.getElementById('scriptSelector').value = '0';
+      document.getElementById('scriptTitleDisplay').textContent = TYPING_SCRIPTS[0].title;
+      publishPresence('aguardando');
+      if (!isFirebaseReady) renderLocalParticipants();
+
+      renderTypingDisplay();
+      focusTypingInput();
+    }
+
+    function changeTypingScript(index) {
+      const selectedIndex = parseInt(index, 10);
+      resetTypingRace();
+      STATE.typing.scriptIndex = Number.isInteger(selectedIndex) ? selectedIndex : 0;
+      document.getElementById('scriptSelector').value = String(STATE.typing.scriptIndex);
+      document.getElementById('scriptTitleDisplay').textContent = TYPING_SCRIPTS[STATE.typing.scriptIndex].title;
+      renderTypingDisplay();
+    }
+
+    function scrollToLeaderboard() {
+      document.getElementById('leaderboardSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    /* ==========================================================================
+       7. LEADERBOARD MULTIPLAYER (FIREBASE REALTIME & FALLBACK LOCALSTORAGE)
+       ========================================================================== */
+    const DEFAULT_LEADERBOARD = [
+      { student: "Lucas Mendes (SENAI-INFRA)", scriptTitle: "Script 1", wpm: 68, cpm: 340, accuracy: "98%", timeSec: "24.2", timestamp: new Date(Date.now() - 3600000).toISOString() },
+      { student: "Beatriz Santos (SENAI-DEV)", scriptTitle: "Script 1", wpm: 61, cpm: 305, accuracy: "97%", timeSec: "27.0", timestamp: new Date(Date.now() - 7200000).toISOString() },
+      { student: "Carlos Eduardo (SENAI-DBA)", scriptTitle: "Script 1", wpm: 54, cpm: 270, accuracy: "95%", timeSec: "30.5", timestamp: new Date(Date.now() - 10800000).toISOString() }
+    ];
+
+    function getLocalLeaderboard() {
+      const data = localStorage.getItem('senai_leaderboard_data');
+      if (data) {
+        try { return JSON.parse(data); } catch (e) { }
+      }
+      return DEFAULT_LEADERBOARD;
+    }
+
+    function saveLocalLeaderboard(list) {
+      localStorage.setItem('senai_leaderboard_data', JSON.stringify(list));
+    }
+
+    function submitLeaderboardScore(scoreObj) {
+      if (isFirebaseReady && firebaseDb) {
+        try {
+          firebaseDb.ref('senai_typing_race/leaderboard').push(scoreObj);
+          return;
+        } catch (err) {
+          console.warn('Erro ao salvar no Firebase. Gravando localmente:', err);
+        }
+      }
+      // Fallback local
+      const list = getLocalLeaderboard();
+      list.push(scoreObj);
+      list.sort((a, b) => b.wpm - a.wpm);
+      saveLocalLeaderboard(list.slice(0, 25)); // guarda top 25
+      renderLocalLeaderboard();
+    }
+
+    function listenFirebaseLeaderboard() {
+      if (!isFirebaseReady || !firebaseDb) return;
+      try {
+        firebaseDb.ref('senai_typing_race/leaderboard').orderByChild('wpm').limitToLast(25).on('value', snapshot => {
+          const val = snapshot.val();
+          if (val) {
+            const list = Object.values(val);
+            list.sort((a, b) => b.wpm - a.wpm);
+            renderLeaderboardTable(list);
+          } else {
+            renderLeaderboardTable([]);
+          }
+        });
+      } catch (e) {
+        console.error('Falha no listener do Firebase:', e);
+        renderLocalLeaderboard();
+      }
+    }
+
+    function renderLocalLeaderboard() {
+      const list = getLocalLeaderboard();
+      renderLeaderboardTable(list);
+    }
+
+    function renderLeaderboardTable(records) {
+      const tbody = document.getElementById('leaderboardTbody');
+      const liveTbody = document.getElementById('liveCompetitionLeaderboard');
+      if (!records || records.length === 0) {
+        if (tbody) tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="p-6 text-center text-slate-500 font-mono">
+              Nenhum registro classificado no momento. Conclua uma prova de digitação para figurar no ranking.
+            </td>
+          </tr>
+        `;
+        if (liveTbody) liveTbody.innerHTML = '<tr><td colspan="6" class="p-5 text-center text-slate-500">Nenhum resultado final.</td></tr>';
+        return;
+      }
+
+      const fullMarkup = records.map((rec, idx) => {
+        let posBadge = `<span class="font-bold text-slate-700">${idx + 1}º</span>`;
+        if (idx === 0) posBadge = `<span class="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded font-black text-xs">1º 🏆</span>`;
+        if (idx === 1) posBadge = `<span class="bg-slate-200 text-slate-800 border border-slate-300 px-2 py-0.5 rounded font-bold text-xs">2º 🥈</span>`;
+        if (idx === 2) posBadge = `<span class="bg-amber-800/10 text-amber-800 border border-amber-700/30 px-2 py-0.5 rounded font-bold text-xs">3º 🥉</span>`;
+
+        const dateStr = rec.timestamp ? new Date(rec.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--';
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-4">${posBadge}</td>
+            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(rec.student)}</td>
+            <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(rec.scriptTitle)}</td>
+            <td class="py-3 px-4 text-center font-mono font-bold text-[#10B981] text-sm">${rec.wpm}</td>
+            <td class="py-3 px-4 text-center font-mono text-slate-700">${rec.cpm}</td>
+            <td class="py-3 px-4 text-center font-mono text-slate-700">${rec.accuracy}</td>
+            <td class="py-3 px-4 text-center font-mono text-slate-700">${rec.timeSec}s</td>
+            <td class="py-3 px-4 text-right text-slate-500">${dateStr}</td>
+          </tr>
+        `;
+      }).join('');
+      if (tbody) tbody.innerHTML = fullMarkup;
+      if (liveTbody) {
+        liveTbody.innerHTML = records.map((rec, idx) => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-bold">${idx + 1}º</td>
+            <td class="p-3 font-bold text-slate-900">${escapeHtml(rec.student || 'Aluno')}</td>
+            <td class="p-3 font-mono text-slate-600">${escapeHtml(rec.scriptTitle || 'Competição')}</td>
+            <td class="p-3 font-mono text-emerald-700 font-bold">${rec.wpm || 0}</td>
+            <td class="p-3 font-mono">${escapeHtml(String(rec.accuracy || '0%'))}</td>
+            <td class="p-3 font-mono">${escapeHtml(String(rec.timeSec || 0))}s</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function clearLocalLeaderboard() {
+      if (confirm("Deseja realmente limpar os recordes armazenados no navegador local?")) {
+        localStorage.removeItem('senai_leaderboard_data');
+        renderLocalLeaderboard();
+      }
+    }
+
+    function openEtlDocsModal() {
+      document.getElementById('etlDocsModal').classList.remove('hidden');
+    }
+    function closeEtlDocsModal() {
+      document.getElementById('etlDocsModal').classList.add('hidden');
+    }
+
+    /* ==========================================================================
+       8. BLOCO 3: BANCO DE 15 QUESTÕES REAIS DE CONCURSOS (2023 A 2026)
+       ========================================================================== */
+    const CONTEST_QUESTIONS = [
+      {
+        id: 1,
+        banca: "FGV",
+        ano: 2024,
+        orgao: "TJ-MS - Analista de Banco de Dados",
+        topico: "JOIN",
+        assunto: "Comportamento de Cardinalidade em Junções ANSI SQL",
+        enunciado: "Considere a tabela A com 10 registros e a tabela B com 12 registros. Sabendo que 8 registros da tabela A possuem correspondência com registros da tabela B, a quantidade de registros retornada pelas consultas utilizando INNER JOIN, LEFT JOIN e RIGHT JOIN entre A e B será, respectivamente:",
+        opcoes: [
+          { letra: "a", texto: "8, 10 e 12" },
+          { letra: "b", texto: "10, 8 e 12" },
+          { letra: "c", texto: "8, 12 e 10" },
+          { letra: "d", texto: "10, 10 e 12" },
+          { letra: "e", texto: "8, 8 e 8" }
+        ],
+        correta: "a",
+        explicacao: "O INNER JOIN retorna apenas as correspondências exatas entre ambas as tabelas (8). O LEFT JOIN preserva a totalidade dos 10 registros da tabela à esquerda A. O RIGHT JOIN preserva integralmente os 12 registros da tabela à direita B, preenchendo com NULL onde não houver correspondência."
+      },
+      {
+        id: 2,
+        banca: "FGV",
+        ano: 2023,
+        orgao: "TJ-SE - Analista Judiciário - Banco de Dados",
+        topico: "INSERT",
+        assunto: "Transformação em Carga ETL com INSERT INTO ... SELECT e CASE WHEN",
+        enunciado: "Em um procedimento de carga ETL, o DBA precisa inserir dados da tabela staging A na tabela destino B. Durante o processo, valores nulos na coluna custo devem ser convertidos para 0, e os códigos 'A', 'B' e 'C' da coluna tipo devem ser mapeados para 1, 2 e 3. Qual instrução atende à exigência?",
+        opcoes: [
+          { letra: "a", texto: "INSERT INTO B SELECT id, descricao, custo, tipo FROM A;" },
+          { letra: "b", texto: "INSERT INTO B (id, descricao, custo, tipo) SELECT id, descricao, COALESCE(custo, 0), CASE tipo WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 END FROM A;" },
+          { letra: "c", texto: "UPDATE B SET tipo = CASE WHEN tipo = 'A' THEN 1 END;" },
+          { letra: "d", texto: "INSERT INTO B VALUES (SELECT * FROM A WHERE custo IS NOT NULL);" },
+          { letra: "e", texto: "INSERT INTO B SELECT * FROM A WHERE CASE WHEN tipo IS NOT NULL THEN 1 END;" }
+        ],
+        correta: "b",
+        explicacao: "A cláusula INSERT INTO ... SELECT combina a extração da tabela A com as regras de transformação (COALESCE para tratar nulos em custo e CASE WHEN para mapear os tipos A, B e C para 1, 2 e 3) inserindo os dados estruturados diretamente no destino B."
+      },
+      {
+        id: 3,
+        banca: "FGV",
+        ano: 2024,
+        orgao: "DATAPREV - Analista de TI",
+        topico: "ETL",
+        assunto: "Arquitetura ETL - Etapa de Transformação",
+        enunciado: "No fluxo de integração de dados em um Data Warehouse, a etapa responsável pela padronização de tipos de dados, sanitização de nulos, aplicação de regras condicionais e junções de tabelas staging é denominada:",
+        opcoes: [
+          { letra: "a", texto: "Extração (Extract)" },
+          { letra: "b", texto: "Carga (Load)" },
+          { letra: "c", texto: "Transformação (Transform)" },
+          { letra: "d", texto: "Área de Staging" },
+          { letra: "e", texto: "Pipeline de Ingestão" }
+        ],
+        correta: "c",
+        explicacao: "A fase Transform (Transformação) é responsável pela limpeza, conversão de tipos, validação de integridade referencial, cálculos derivados e padronização semântica das regras de negócio antes da carga definitiva no Data Warehouse."
+      },
+      {
+        id: 4,
+        banca: "FCC",
+        ano: 2024,
+        orgao: "Pref. Jaboatão dos Guararapes - Analista de TI",
+        topico: "JOIN",
+        assunto: "Preservação de Dados e Tratamento de Nulos no LEFT JOIN",
+        enunciado: "Ao executar uma consulta com a sintaxe `SELECT * FROM Clientes c LEFT JOIN Pedidos p ON c.id = p.cliente_id;`, os registros da tabela Clientes que não possuem nenhum pedido cadastrado apresentarão nas colunas pertencentes à tabela Pedidos:",
+        opcoes: [
+          { letra: "a", texto: "O valor numérico zero" },
+          { letra: "b", texto: "Uma string vazia" },
+          { letra: "c", texto: "O valor NULL" },
+          { letra: "d", texto: "Erro de execução de chave estrangeira" },
+          { letra: "e", texto: "Serão omitidos do conjunto de resultados" }
+        ],
+        correta: "c",
+        explicacao: "O LEFT JOIN garante a preservação de 100% das linhas da tabela à esquerda (Clientes). Quando não há correspondência física na tabela da direita (Pedidos), o SGBD preenche todas as projeções da tabela direita com o marcador relacional NULL."
+      },
+      {
+        id: 5,
+        banca: "CEBRASPE",
+        ano: 2023,
+        orgao: "SERPRO - Analista de TI",
+        topico: "CASE",
+        assunto: "Flexibilidade da Expressão CASE WHEN em SQL ANSI",
+        enunciado: "Julgue o item: Em instruções SQL compatíveis com o padrão ANSI, a expressão CASE WHEN pode ser empregada tanto em cláusulas SELECT quanto em instruções UPDATE e INSERT INTO ... SELECT para a criação de campos lógicos e transformações condicionais de dados.",
+        opcoes: [
+          { letra: "a", texto: "Certo" },
+          { letra: "b", texto: "Errado" }
+        ],
+        correta: "a",
+        explicacao: "O comando CASE é uma expressão escalar padrão ANSI que pode ser utilizada em qualquer cláusula que aceite expressões relacionais: projeções SELECT, atribuições em comandos UPDATE, projeções em INSERT INTO ... SELECT e cláusulas GROUP BY."
+      },
+      {
+        id: 6,
+        banca: "QUADRIX",
+        ano: 2023,
+        orgao: "CRMV-PR - Tecnologia da Informação",
+        topico: "JOIN",
+        assunto: "Comportamento Operacional do RIGHT JOIN",
+        enunciado: "Na instrução SQL `SELECT * FROM Tabela_A RIGHT JOIN Tabela_B ON Tabela_A.id = Tabela_B.id;`, é correto afirmar que todos os registros da Tabela_B estarão contidos no resultado final, independentemente de possuírem equivalência na Tabela_A.",
+        opcoes: [
+          { letra: "a", texto: "Certo" },
+          { letra: "b", texto: "Errado" }
+        ],
+        correta: "a",
+        explicacao: "O RIGHT JOIN assegura a retenção de 100% das tuplas da tabela posicionada à direita do operador (Tabela_B), preenchendo os atributos da tabela à esquerda (Tabela_A) com NULL quando não houver equivalência de chave."
+      },
+      {
+        id: 7,
+        banca: "CEBRASPE",
+        ano: 2024,
+        orgao: "ANATEL - Especialista em Regulação",
+        topico: "JOIN",
+        assunto: "Filtro de Exclusão com LEFT JOIN e WHERE IS NULL",
+        enunciado: "Para identificar registros da tabela A que não possuem qualquer vínculo na tabela B, o desenvolvedor SQL deve utilizar a combinação:",
+        opcoes: [
+          { letra: "a", texto: "INNER JOIN com filtro WHERE B.id IS NOT NULL" },
+          { letra: "b", texto: "LEFT JOIN com filtro WHERE B.id IS NULL" },
+          { letra: "c", texto: "RIGHT JOIN com filtro WHERE A.id IS NOT NULL" },
+          { letra: "d", texto: "CROSS JOIN com filtro WHERE A.id = B.id" },
+          { letra: "e", texto: "FULL JOIN com filtro WHERE A.id = B.id" }
+        ],
+        correta: "b",
+        explicacao: "O padrão canônico de exclusão relacional utiliza LEFT JOIN entre A e B adicionado da condição WHERE B.chave IS NULL, isolando com precisão os registros órfãos ou exclusivos da tabela da esquerda."
+      },
+      {
+        id: 8,
+        banca: "FGV",
+        ano: 2024,
+        orgao: "MPO - Analista de Planejamento e Orçamento",
+        topico: "INSERT",
+        assunto: "Sintaxe do Comando INSERT INTO ... SELECT",
+        enunciado: "Assinale a alternativa que apresenta a sintaxe correta para copiar dados entre tabelas existentes sem a utilização da cláusula VALUES:",
+        opcoes: [
+          { letra: "a", texto: "INSERT INTO Destino SELECT * FROM Origem;" },
+          { letra: "b", texto: "INSERT INTO Destino VALUES (SELECT * FROM Origem);" },
+          { letra: "c", texto: "COPY FROM Origem TO Destino;" },
+          { letra: "d", texto: "INSERT INTO Destino SET SELECT * FROM Origem;" },
+          { letra: "e", texto: "UPDATE Destino INSERT SELECT * FROM Origem;" }
+        ],
+        correta: "a",
+        explicacao: "A sintaxe padrão ANSI SQL para inserção de conjuntos oriundos de consultas é 'INSERT INTO tabela_destino SELECT ... FROM tabela_origem', dispensando por completo o uso da cláusula VALUES."
+      },
+      {
+        id: 9,
+        banca: "CONSULPAM",
+        ano: 2023,
+        orgao: "Pref. Quadra-SP - Analista de Sistemas",
+        topico: "CASE",
+        assunto: "Estrutura Condicional CASE Simples vs Pesquisada",
+        enunciado: "Em relação à cláusula CASE em consultas SQL, assinale a afirmativa correta:",
+        opcoes: [
+          { letra: "a", texto: "O bloco CASE exige obrigatoriamente a presença da instrução ELSE para ser executado." },
+          { letra: "b", texto: "A sintaxe CASE WHEN condição THEN resultado END permite avaliar operadores lógicos complexos em cada cláusula WHEN." },
+          { letra: "c", texto: "A cláusula CASE só pode ser utilizada dentro de procedimentos armazenados (Stored Procedures)." },
+          { letra: "d", texto: "O retorno de um bloco CASE é obrigatoriamente um valor booleano." },
+          { letra: "e", texto: "Não é possível encadear múltiplos WHEN em uma mesma instrução." }
+        ],
+        correta: "b",
+        explicacao: "No formato pesquisado (Searched CASE), cada bloco WHEN avalia expressões booleanas completas com múltiplos comparadores relacionais e operadores lógicos (AND, OR, NOT, BETWEEN, IN)."
+      },
+      {
+        id: 10,
+        banca: "FCC",
+        ano: 2025,
+        orgao: "ARTESP - Especialista em Regulação",
+        topico: "ETL",
+        assunto: "Papel da Tabela Staging no Processamento ETL",
+        enunciado: "Em pipelines de dados de alta volumetria, a camada intermediária utilizada para receber dados brutos extraídos dos sistemas transacionais antes da execução das transformações e junções complexas é chamada de:",
+        opcoes: [
+          { letra: "a", texto: "Data Mart" },
+          { letra: "b", texto: "Data Warehouse" },
+          { letra: "c", texto: "Staging Area" },
+          { letra: "d", texto: "OLAP Cube" },
+          { letra: "e", texto: "Master Data Index" }
+        ],
+        correta: "c",
+        explicacao: "A Staging Area atua como área de pouso intermediária na qual os dados brutos são consolidados sem travas de integridade referencial rígidas, viabilizando operações pesadas de higienização, deduplicação e junção sem onerar os bancos transacionais de produção."
+      },
+      {
+        id: 11,
+        banca: "CEBRASPE",
+        ano: 2024,
+        orgao: "Caixa Econômica Federal - TI",
+        topico: "JOIN",
+        assunto: "Diferença entre INNER JOIN e FULL OUTER JOIN",
+        enunciado: "Julgue o item: Ao contrário do INNER JOIN, que descarta registros sem correspondência em ambas as tabelas, o FULL OUTER JOIN retorna todas as linhas de ambas as tabelas, alinhando as correspondências e inserindo NULL onde não houver combinação.",
+        opcoes: [
+          { letra: "a", texto: "Certo" },
+          { letra: "b", texto: "Errado" }
+        ],
+        correta: "a",
+        explicacao: "O FULL OUTER JOIN congrega a semântica do LEFT JOIN e do RIGHT JOIN em uma única operação, retendo todas as tuplas participantes e aplicando NULL para colunas órfãs à esquerda ou à direita."
+      },
+      {
+        id: 12,
+        banca: "FGV",
+        ano: 2025,
+        orgao: "Receita Federal - Tecnologia da Informação",
+        topico: "CASE",
+        assunto: "Agrupamento e Categorização Dinâmica com CASE WHEN",
+        enunciado: "Para categorizar saldos em 'ALTO', 'MEDIO' e 'BAIXO' e obter a contagem de registros por categoria em uma única consulta SQL, deve-se utilizar:",
+        opcoes: [
+          { letra: "a", texto: "CASE WHEN dentro de funções de agregação ou na projeção associado à cláusula GROUP BY." },
+          { letra: "b", texto: "Somente o comando WHERE com subconsultas aninhadas." },
+          { letra: "c", texto: "Apenas a instrução HAVING acompanhada de LEFT JOIN." },
+          { letra: "d", texto: "Cláusula ORDER BY combinada com INSERT INTO." },
+          { letra: "e", texto: "Estruturas JOIN sem a utilização de GROUP BY." }
+        ],
+        correta: "a",
+        explicacao: "Utiliza-se a expressão CASE WHEN na projeção para criar as classes ordinais de saldo e repete-se a mesma expressão ou seu alias na cláusula GROUP BY, permitindo agregar as contagens com COUNT(*)."
+      },
+      {
+        id: 13,
+        banca: "QUADRIX",
+        ano: 2024,
+        orgao: "CFT - Analista Técnico de TI",
+        topico: "JOIN",
+        assunto: "Posição da Condicional de Filtro: Cláusula ON vs Cláusula WHERE no LEFT JOIN",
+        enunciado: "Em uma consulta utilizando LEFT JOIN, aplicar um filtro sobre a tabela da direita dentro da cláusula WHERE (exemplo: `WHERE TabB.status = 'ATIVO'`) transforma na prática o resultado da consulta em um comportamento equivalente ao:",
+        opcoes: [
+          { letra: "a", texto: "FULL OUTER JOIN" },
+          { letra: "b", texto: "INNER JOIN" },
+          { letra: "c", texto: "RIGHT JOIN" },
+          { letra: "d", texto: "CROSS JOIN" },
+          { letra: "e", texto: "UNION ALL" }
+        ],
+        correta: "b",
+        explicacao: "Como a condição WHERE é avaliada após a junção, os registros preenchidos com NULL pelo LEFT JOIN na ausência de par são descartados pelo predicado TabB.status = 'ATIVO', anulando a preservação e equivalendo formalmente a um INNER JOIN."
+      },
+      {
+        id: 14,
+        banca: "FCC",
+        ano: 2024,
+        orgao: "TRT-11 - Técnico Judiciário - TI",
+        topico: "INSERT",
+        assunto: "Inserção de Dados Combinados via INSERT INTO ... SELECT com INNER JOIN",
+        enunciado: "O comando SQL utilizado para consolidar em uma tabela chamada Historico os dados vindos da junção entre Funcionarios e Departamentos é:",
+        opcoes: [
+          { letra: "a", texto: "INSERT INTO Historico (func_id, func_nome, dep_nome) SELECT f.id, f.nome, d.nome FROM Funcionarios f INNER JOIN Departamentos d ON f.dep_id = d.id;" },
+          { letra: "b", texto: "UPDATE Historico SET SELECT f.id, f.nome, d.nome FROM Funcionarios f INNER JOIN Departamentos d;" },
+          { letra: "c", texto: "INSERT VALUES INTO Historico SELECT * FROM Funcionarios INNER JOIN Departamentos;" },
+          { letra: "d", texto: "COPY TO Historico SELECT f.id, f.nome FROM Funcionarios f LEFT JOIN Departamentos d;" },
+          { letra: "e", texto: "MERGE INTO Historico USING SELECT FROM Funcionarios;" }
+        ],
+        correta: "a",
+        explicacao: "A sintaxe padrão de inserção a partir de consulta define os campos de destino no cabeçalho do INSERT INTO e projeta a junção das tabelas de origem na consulta SELECT aninhada."
+      },
+      {
+        id: 15,
+        banca: "CONSULPAM",
+        ano: 2024,
+        orgao: "Pref. Viana-ES - Desenvolvedor SQL",
+        topico: "JOIN",
+        assunto: "Simetria entre LEFT JOIN e RIGHT JOIN",
+        enunciado: "A consulta `SELECT * FROM Tabela_X LEFT JOIN Tabela_Y ON Tabela_X.id = Tabela_Y.id;` produz exatamente o mesmo resultado lógico que:",
+        opcoes: [
+          { letra: "a", texto: "SELECT * FROM Tabela_Y RIGHT JOIN Tabela_X ON Tabela_X.id = Tabela_Y.id;" },
+          { letra: "b", texto: "SELECT * FROM Tabela_X RIGHT JOIN Tabela_Y ON Tabela_X.id = Tabela_Y.id;" },
+          { letra: "c", texto: "SELECT * FROM Tabela_Y LEFT JOIN Tabela_X ON Tabela_X.id = Tabela_Y.id;" },
+          { letra: "d", texto: "SELECT * FROM Tabela_X INNER JOIN Tabela_Y ON Tabela_X.id = Tabela_Y.id;" },
+          { letra: "e", texto: "SELECT * FROM Tabela_X CROSS JOIN Tabela_Y;" }
+        ],
+        correta: "a",
+        explicacao: "A inversão física das tabelas na cláusula relacional combinada com a substituição do operador LEFT JOIN por RIGHT JOIN produz uma operação algébrica de resultado absolutamente idêntico."
+      }
+    ];
+
+    function initQuiz() {
+      // Carrega respostas persistidas no localStorage se existirem
+      const savedAnswers = localStorage.getItem('senai_quiz_answers');
+      if (savedAnswers) {
+        try { STATE.quiz.answers = JSON.parse(savedAnswers); } catch (e) { }
+      }
+      renderQuestions();
+      updateQuizStats();
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById('questionsContainer');
+      const bFilter = STATE.quiz.filterBanca;
+      const tFilter = STATE.quiz.filterTopic;
+
+      const filtered = CONTEST_QUESTIONS.filter(q => {
+        const matchBanca = (bFilter === 'ALL' || q.banca === bFilter);
+        const matchTopic = (tFilter === 'ALL' || q.topico === tFilter);
+        return matchBanca && matchTopic;
+      });
+
+      document.getElementById('filterCountDisplay').textContent = 
+        `Exibindo ${filtered.length} de ${CONTEST_QUESTIONS.length} questões`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="senai-card rounded-lg p-8 text-center text-slate-500 font-mono text-xs">
+            Nenhuma questão encontrada para a combinação de filtros selecionada.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(q => {
+        const userAnswer = STATE.quiz.answers[q.id];
+        const isAnswered = userAnswer !== undefined;
+        const isCorrect = isAnswered && userAnswer === q.correta;
+
+        return `
+          <div id="qCard_${q.id}" class="senai-card rounded-lg p-6 border-l-4 ${isAnswered ? (isCorrect ? 'border-l-[#10B981]' : 'border-l-[#E30613]') : 'border-l-[#0054A6]'} transition">
+            <!-- Metadados da Questão -->
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs mb-3">
+              <div class="flex flex-wrap items-center gap-2 font-mono">
+                <span class="bg-[#0054A6] text-white px-2 py-0.5 rounded font-bold">QUESTÃO ${q.id}</span>
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-300 font-semibold">${q.banca}</span>
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-300">${q.ano}</span>
+                <span class="text-slate-500 font-sans font-medium">${q.orgao}</span>
+              </div>
+              <div class="text-[11px] font-mono text-slate-500 bg-slate-50 px-2 py-0.5 rounded border">
+                ${q.assunto}
+              </div>
+            </div>
+
+            <!-- Enunciado -->
+            <div class="text-sm font-medium text-slate-900 leading-relaxed mb-4">
+              ${formatSqlInText(q.enunciado)}
+            </div>
+
+            <!-- Opções -->
+            <div class="space-y-2 mb-4">
+              ${q.opcoes.map(opt => {
+                let optStyle = 'border-slate-200 hover:border-slate-300 bg-white text-slate-800';
+                let indicator = `<span class="w-6 h-6 rounded-full border border-slate-300 flex items-center justify-center font-bold text-xs uppercase font-mono mr-3">${opt.letra}</span>`;
+
+                if (isAnswered) {
+                  if (opt.letra === q.correta) {
+                    optStyle = 'border-[#10B981] bg-emerald-50 text-emerald-900 font-semibold';
+                    indicator = `<span class="w-6 h-6 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-xs uppercase font-mono mr-3">✓</span>`;
+                  } else if (opt.letra === userAnswer) {
+                    optStyle = 'border-[#E30613] bg-red-50 text-red-900 font-semibold';
+                    indicator = `<span class="w-6 h-6 rounded-full bg-[#E30613] text-white flex items-center justify-center font-bold text-xs uppercase font-mono mr-3">✕</span>`;
+                  } else {
+                    optStyle = 'border-slate-200 bg-slate-50/50 text-slate-400 opacity-60';
+                  }
+                } else if (userAnswer === opt.letra) {
+                  optStyle = 'border-[#0054A6] bg-blue-50 text-[#0054A6] font-semibold';
+                }
+
+                return `
+                  <div 
+                    onclick="${isAnswered ? '' : `selectQuizOption(${q.id}, '${opt.letra}')`}"
+                    class="p-3 rounded border text-xs flex items-center cursor-pointer transition ${optStyle}"
+                  >
+                    ${indicator}
+                    <span class="leading-normal">${formatSqlInText(opt.texto)}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Botões de Ação e Gabarito -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pt-3 border-t border-slate-200 gap-3">
+              <div>
+                ${!isAnswered ? `
+                  <span class="text-xs text-slate-400 italic font-mono">Selecione uma opção para registrar a resposta.</span>
+                ` : `
+                  <span class="text-xs font-mono font-bold ${isCorrect ? 'text-[#10B981]' : 'text-[#E30613]'} flex items-center gap-1.5">
+                    ${isCorrect ? '✓ RESPOSTA CORRETA' : '✕ RESPOSTA INCORRETA'}
+                  </span>
+                `}
+              </div>
+
+              ${isAnswered ? `
+                <button 
+                  onclick="toggleExplanation(${q.id})" 
+                  class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-3 py-1.5 rounded transition flex items-center gap-1"
+                >
+                  <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Gabarito Comentado
+                </button>
+              ` : ''}
+            </div>
+
+            <!-- Painel de Gabarito Comentado Expandido -->
+            <div id="expPanel_${q.id}" class="${isAnswered ? '' : 'hidden'} mt-4 p-4 rounded bg-slate-50 border border-slate-200 text-xs text-slate-700">
+              <div class="flex items-center gap-2 font-bold text-[#0054A6] mb-1 font-mono">
+                <span>GABARITO OFICIAL COMENTADO (LETRA ${q.correta.toUpperCase()}):</span>
+              </div>
+              <p class="leading-relaxed text-slate-700">
+                ${q.explicacao}
+              </p>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatSqlInText(text) {
+      return text.replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-blue-700 font-mono px-1.5 py-0.5 rounded text-[11px] font-bold border border-slate-200">$1</code>');
+    }
+
+    function selectQuizOption(questionId, letter) {
+      STATE.quiz.answers[questionId] = letter;
+      localStorage.setItem('senai_quiz_answers', JSON.stringify(STATE.quiz.answers));
+      renderQuestions();
+      updateQuizStats();
+    }
+
+    function toggleExplanation(questionId) {
+      const p = document.getElementById(`expPanel_${questionId}`);
+      if (p) p.classList.toggle('hidden');
+    }
+
+    function updateQuizStats() {
+      const answeredCount = Object.keys(STATE.quiz.answers).length;
+      let correct = 0;
+      let wrong = 0;
+
+      CONTEST_QUESTIONS.forEach(q => {
+        const a = STATE.quiz.answers[q.id];
+        if (a) {
+          if (a === q.correta) correct++;
+          else wrong++;
+        }
+      });
+
+      const accuracy = answeredCount > 0 ? ((correct / answeredCount) * 100).toFixed(1) : "0.0";
+      const pct = Math.round((answeredCount / CONTEST_QUESTIONS.length) * 100);
+
+      document.getElementById('quizProgressText').textContent = `${answeredCount} / ${CONTEST_QUESTIONS.length}`;
+      document.getElementById('quizProgressBar').style.width = `${pct}%`;
+      document.getElementById('quizCorrectCount').textContent = correct;
+      document.getElementById('quizWrongCount').textContent = wrong;
+      document.getElementById('quizAccuracyRate').textContent = `${accuracy}%`;
+    }
+
+    function applyQuizFilters() {
+      STATE.quiz.filterBanca = document.getElementById('filterBanca').value;
+      STATE.quiz.filterTopic = document.getElementById('filterTopic').value;
+      renderQuestions();
+    }
+
+    function resetAllQuizAnswers() {
+      if (confirm("Deseja reiniciar todas as respostas deste simulado de 15 questões?")) {
+        STATE.quiz.answers = {};
+        localStorage.removeItem('senai_quiz_answers');
+        renderQuestions();
+        updateQuizStats();
+      }
+    }
+
+    /* ==========================================================================
+       9. INICIALIZAÇÃO DA APLICAÇÃO
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      updateStudentLabel();
+      selectCase(101);
+      initTypingRace();
+      initFirebase();
+      initQuiz();
+
+      // Solicita identificação do aluno se não preenchido
+      if (!STATE.studentName) {
+        setTimeout(() => {
+          openStudentModal();
+        }, 600);
+      }
+    });
+  </script>
+</body>
+</html>
